@@ -1,0 +1,9 @@
+{
+	"name": "tiled",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2015, wildn00b",
+	"authors": ["wildn00b"],
+	"dependencies": {
+		"x11": "~>1.0.8"
+	}
+}
