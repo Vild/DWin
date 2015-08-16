@@ -3,5 +3,5 @@ docs.json
 __dummy.html
 *.o
 *.obj
-/tiled
+/dwin
 dub.selections.json

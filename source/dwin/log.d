@@ -1,4 +1,4 @@
-module tiled.log;
+module dwin.log;
 
 import std.stdio : stdout, stderr;
 import std.conv : toTextRange;
