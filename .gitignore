@@ -5,3 +5,4 @@ __dummy.html
 *.obj
 /dwin
 dub.selections.json
+.gdb_history
