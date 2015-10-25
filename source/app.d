@@ -3,8 +3,7 @@ import std.getopt;
 int main(string[] args) {
 	import std.stdio : writeln, writefln;
 
-	auto result = getopt(args,
-		);
+	auto result = getopt(args);
 
 	if (result.helpWanted) {
 		defaultGetoptPrinter("DWin is a tiled based window manager written in the lovely language called D", result.options);
@@ -16,14 +15,11 @@ int main(string[] args) {
 	return 0;
 }
 
-
 enum HandlingEvent {
 	NONE,
 	MOVE,
 	RESIZE
 }
-
-
 
 void MainLoop() {
 	import dwin.log;
@@ -41,7 +37,6 @@ void MainLoop() {
 	x.GrabButton(1,	XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE,
 		XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, 3, XCB_MOD_MASK_ANY);
 	x.Flush();
-
 
 	HandlingEvent handlingEvent = HandlingEvent.NONE;
 	xcb_drawable_t win;
@@ -86,15 +81,13 @@ void MainLoop() {
 				pointerDiffX = pointer.root_x - geom.x;
 				pointerDiffY = pointer.root_y - geom.y;
 				oldGeom = *geom;
-				log.Info("handlingEvent: %s, pointerDiffX: %s, pointerDiffY: %s", handlingEvent, pointerDiffX, pointerDiffY);
 			} else {
 				handlingEvent = HandlingEvent.RESIZE;
 				pointerDiffX = pointer.root_x - (geom.x + geom.width/2);
 				pointerDiffY = pointer.root_y - (geom.y + geom.height/2);
 				oldGeom = *geom;
-				log.Info("handlingEvent: %s, pointerDiffX: %s, pointerDiffY: %s", handlingEvent, pointerDiffX, pointerDiffY);
 
-				int pointX = (pointer.root_x - geom.x) / (geom.width  / 4)+1;
+				int pointX = (pointer.root_x - geom.x) / (geom.width	/ 4)+1;
 				int pointY = (pointer.root_y - geom.y) / (geom.height / 4)+1;
 
 				log.Info("PointX: %d, PointY: %d", pointX, pointY);
@@ -149,9 +142,8 @@ void MainLoop() {
 
 				if (row == Loc.FIRST) {
 					if (column == Loc.FIRST) {
-						log.Info("FIRST, FIRST");
 						uint oldPx = px;
-						px = (pointer.root_x) - (pointerDiffX + oldGeom.width  / 2);
+						px = (pointer.root_x) - (pointerDiffX + oldGeom.width	/ 2);
 						pw += oldPx - px;
 
 						uint oldPy = py;
@@ -159,13 +151,11 @@ void MainLoop() {
 						ph += oldPy - py;
 
 					} else if (column == Loc.SECOND) {
-						log.Info("FIRST, SECOND");
 						uint oldPy = py;
 						py = (pointer.root_y) - (pointerDiffY + oldGeom.height / 2);
 						ph += oldPy - py;
 					} else /*if (column == Loc.THIRD) */ {
-						log.Info("FIRST, THIRD");
-						pw = (pointer.root_x - oldGeom.x) - (pointerDiffX - oldGeom.width  / 2);
+						pw = (pointer.root_x - oldGeom.x) - (pointerDiffX - oldGeom.width	/ 2);
 
 						uint oldPy = py;
 						py = (pointer.root_y) - (pointerDiffY + oldGeom.height / 2);
@@ -173,35 +163,28 @@ void MainLoop() {
 					}
 				} else if (row == Loc.SECOND) {
 					if (column == Loc.FIRST) {
-						log.Info("SECOND, FIRST");
 						uint oldPx = px;
-						px = (pointer.root_x) - (pointerDiffX + oldGeom.width  / 2);
+						px = (pointer.root_x) - (pointerDiffX + oldGeom.width	/ 2);
 						pw += oldPx - px;
 
 					} else if (column == Loc.SECOND) {
-						log.Info("SECOND, SECOND");
 
 					} else /*if (column == Loc.THIRD) */ {
-						log.Info("SECOND, THIRD");
-						pw = (pointer.root_x - oldGeom.x) - (pointerDiffX - oldGeom.width  / 2);
+						pw = (pointer.root_x - oldGeom.x) - (pointerDiffX - oldGeom.width	/ 2);
 					}
 				} else /*if (row == Loc.THIRD) */ {
 					if (column == Loc.FIRST) {
-						log.Info("THIRD, FIRST");
 						uint oldPx = px;
-						px = (pointer.root_x) - (pointerDiffX + oldGeom.width  / 2);
+						px = (pointer.root_x) - (pointerDiffX + oldGeom.width	/ 2);
 						pw += oldPx - px;
 
 						ph = (pointer.root_y - oldGeom.y) - (pointerDiffY - oldGeom.height/2);
 					} else if (column == Loc.SECOND) {
-						log.Info("THIRD, SECOND");
-						log.Info("Mouse pixel from top: %s", pointerDiffY);
 
 
 						ph = (pointer.root_y - oldGeom.y) - (pointerDiffY - oldGeom.height/2);
 					} else /*if (column == Loc.THIRD) */ {
-						log.Info("THIRD, THIRD");
-						pw = (pointer.root_x - oldGeom.x) - (pointerDiffX - oldGeom.width  / 2);
+						pw = (pointer.root_x - oldGeom.x) - (pointerDiffX - oldGeom.width	/ 2);
 						ph = (pointer.root_y - oldGeom.y) - (pointerDiffY - oldGeom.height / 2);
 					}
 				}
