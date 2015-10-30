@@ -12,8 +12,8 @@ sleep 1
 DISPLAY=$XPORT
 
 feh --bg-max ~/Pictures/Wallpaper.arch/archwall_dark_purple.png
-xterm &
-xterm &
+#xterm &
+#xterm &
 #lxterminal &
 xeyes &
 

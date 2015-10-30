@@ -9,11 +9,11 @@ public:
 	this(XCB xcb, CursorIcons icon) {
 		import std.string : toStringz;
 		this.xcb = xcb;
-		font = xcb_generate_id(xcb.Display);
-		xcb_open_font(xcb.Display, font, 6, "cursor".toStringz);
+		font = xcb_generate_id(xcb.Connection);
+		xcb_open_font(xcb.Connection, font, 6, "cursor".toStringz);
 
-		cursor = xcb_generate_id(xcb.Display);
-		xcb_create_glyph_cursor(xcb.Display,
+		cursor = xcb_generate_id(xcb.Connection);
+		xcb_create_glyph_cursor(xcb.Connection,
 			cursor,
 			font,
 			font,
@@ -25,12 +25,12 @@ public:
 	}
 
 	~this() {
-		xcb_free_cursor(xcb.Display, cursor);
-		xcb_close_font(xcb.Display, font);
+		xcb_free_cursor(xcb.Connection, cursor);
+		xcb_close_font(xcb.Connection, font);
 	}
 
 	void Apply() {
-		xcb_change_window_attributes(xcb.Display, xcb.Root, XCB_CW_CURSOR, &cursor);
+		xcb_change_window_attributes(xcb.Connection, xcb.Root, XCB_CW_CURSOR, &cursor);
 	}
 
 	@property xcb_cursor_t Cursor() { return cursor; }
