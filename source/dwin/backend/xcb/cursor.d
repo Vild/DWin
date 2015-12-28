@@ -30,7 +30,7 @@ public:
 	}
 
 	void Apply() {
-		xcb_change_window_attributes(xcb.Connection, xcb.Root, XCB_CW_CURSOR, &cursor);
+		xcb.Root.ChangeAttributes(XCB_CW_CURSOR, &cursor);
 	}
 
 	@property xcb_cursor_t Cursor() { return cursor; }

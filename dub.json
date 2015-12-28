@@ -4,6 +4,8 @@
 	"copyright": "Copyright © 2015, wildn00b",
 	"authors": ["wildn00b"],
 	"dependencies": {
-		"xcb-d": "~>1.11.0"
+	  "xcb-d": {
+			"path": "../xcb-d"
+		}
 	}
 }

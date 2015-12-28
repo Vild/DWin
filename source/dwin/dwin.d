@@ -6,6 +6,7 @@ import dwin.backend.xcb.xcb;
 import dwin.backend.xcb.window;
 import dwin.backend.xcb.atom;
 import dwin.backend.xcb.event;
+import dwin.backend.xcb.cursor;
 import dwin.util.data;
 import xcb.xcb;
 import xcb.xproto;
@@ -91,7 +92,7 @@ private:
 	}
 
 	struct AtomName {
-		int id;
+		ulong id;
 		string name;
 	}
 
@@ -113,9 +114,20 @@ private:
 		ClientList         = AtomName(7, "_NET_CLIENT_LIST")
 	}
 
+	struct CursorType {
+		ulong id;
+		CursorIcons cursor;
+	}
+
+	enum Cursors : CursorType {
+		Normal   = CursorType(0, CursorIcons.XC_left_ptr),
+		Resizing = CursorType(1, CursorIcons.XC_sizing),
+		Moving   = CursorType(2, CursorIcons.XC_fleur)
+	}
+
 	Log log;
 	XCB xcb;
-	Window window;
+	Window bar;
 
 	bool quit;
 	HandlingEvent handlingEvent = HandlingEvent.NONE;
@@ -134,6 +146,7 @@ private:
 
 	Atom[EnumCount!(WMAtoms)()] lookupWMAtoms;
 	Atom[EnumCount!(NETAtoms)()] lookupNETAtoms;
+	Cursor[EnumCount!(Cursors)()] cursors;
 
 	Event!(xcb_button_press_event_t *) onButtonPress;
 	Event!(xcb_client_message_event_t *) onClientMessage;
@@ -151,6 +164,10 @@ private:
 	Event!(xcb_unmap_notify_event_t *) onUnmapNotify;
 
 	Event!(xcb_button_release_event_t *) onButtonRelease;
+
+	void logEvent(T, string name)(T * e) {
+		log.Debug("");
+	}
 
 	void bind() {
 		xcb.GrabKey(0, XCB_MOD_MASK_ANY, 9,	XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
@@ -171,19 +188,60 @@ private:
 		foreach (netAtom; EnumMembers!NETAtoms)
 			lookupNETAtoms[netAtom.id] = Atom(xcb, netAtom.name);
 
-		window = new Window(xcb, 400, 100, "DWin-Bar");
-		window.Drawable.DrawRectangle([
+		foreach (cursor; EnumMembers!Cursors)
+			cursors[cursor.id] = new Cursor(xcb, cursor.cursor);
+
+		cursors[Cursors.Normal.id].Apply();
+
+		lookupNETAtoms[NETAtoms.Supported.id].Change(xcb.Root, lookupNETAtoms);
+
+		lookupNETAtoms[NETAtoms.ClientList.id].Delete(xcb.Root);
+
+		bar = new Window(xcb, 400, 100, "DWin-Bar");
+		bar.Drawable.ChangeColor(0xFF00FF00, 0x00FF00FF);
+		bar.Drawable.DrawRectangle([
 			xcb_rectangle_t(0, 0, 200, 50),
 			xcb_rectangle_t(200, 50, 200, 50)
 		], true);
-		window.Render();
-		window.Map();
+		bar.Map();
+		bar.Render();
 		xcb.Flush();
 
+if (false)
+		{
+			onButtonPress ~= &logEvent!(xcb_button_press_event_t, "onButtonPress");
+			onClientMessage ~= &logEvent!(xcb_client_message_event_t, "onClientMessage");
+			onConfigureRequest ~= &logEvent!(xcb_configure_request_event_t, "onConfigureRequest");
+			onConfigureNotify ~= &logEvent!(xcb_configure_notify_event_t, "onConfigureNotify");
+			onDestroyNotify ~= &logEvent!(xcb_destroy_notify_event_t, "onDestroyNotify");
+			onEnterNotify ~= &logEvent!(xcb_enter_notify_event_t, "onEnterNotify");
+			onExpose ~= &logEvent!(xcb_expose_event_t, "onExpose");
+			onFocusIn ~= &logEvent!(xcb_focus_in_event_t, "onFocusIn");
+			onKeyPress ~= &logEvent!(xcb_key_press_event_t, "onKeyPress");
+			onMappingNotify ~= &logEvent!(xcb_mapping_notify_event_t, "onMappingNotify");
+			onMapRequest ~= &logEvent!(xcb_map_request_event_t, "onMapRequest");
+			onMotionNotify ~= &logEvent!(xcb_motion_notify_event_t, "onMotionNotify");
+			onPropertyNotify ~= &logEvent!(xcb_property_notify_event_t, "onPropertyNotify");
+			onUnmapNotify ~= &logEvent!(xcb_unmap_notify_event_t, "onUnmapNotify");
+			onButtonRelease ~= &logEvent!(xcb_button_release_event_t, "onButtonRelease");
+		}
+
+		onExpose ~= &renderBar;
 		onKeyPress ~= &shouldQuit;
 		onButtonPress ~= &doMovingWindow;
 		onMotionNotify ~= &handleMoving;
 		onButtonRelease ~= &buttonRelease;
+
+		uint eventMask = XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_PROPERTY_CHANGE;
+
+		xcb.Root.ChangeAttributes(XCB_CW_EVENT_MASK, &eventMask);
+	}
+
+	void renderBar(xcb_expose_event_t * e) {
+		log.Info("");
+		if (e.window == bar.Window) {
+			bar.Render();
+		}
 	}
 
 	void shouldQuit(xcb_key_press_event_t * key) {
@@ -202,15 +260,17 @@ private:
 
 		// Get window size
 		geom = xcb_get_geometry_reply(xcb.Connection, xcb_get_geometry(xcb.Connection, win), null);
-		xcb_query_pointer_reply_t *pointer = xcb_query_pointer_reply(xcb.Connection, xcb_query_pointer(xcb.Connection, xcb.Root), null);
+		xcb_query_pointer_reply_t *pointer = xcb_query_pointer_reply(xcb.Connection, xcb_query_pointer(xcb.Connection, xcb.Root.Window), null);
 
 		if (be.detail == 1) { //Left click
 			handlingEvent = HandlingEvent.MOVE;
+			cursors[Cursors.Moving.id].Apply();
 			pointerDiffX = pointer.root_x - geom.x;
 			pointerDiffY = pointer.root_y - geom.y;
 			oldGeom = *geom;
 		} else {
 			handlingEvent = HandlingEvent.RESIZE;
+			cursors[Cursors.Resizing.id].Apply();
 			pointerDiffX = pointer.root_x - (geom.x + geom.width/2);
 			pointerDiffY = pointer.root_y - (geom.y + geom.height/2);
 			oldGeom = *geom;
@@ -247,9 +307,10 @@ private:
 	}
 
 	void handleMoving(xcb_motion_notify_event_t * e) {
+		import std.algorithm.comparison : max;
 		if (handlingEvent == HandlingEvent.NONE)
 			return;
-		xcb_query_pointer_reply_t *pointer = xcb_query_pointer_reply(xcb.Connection, xcb_query_pointer(xcb.Connection, xcb.Root), null);
+		xcb_query_pointer_reply_t *pointer = xcb_query_pointer_reply(xcb.Connection, xcb_query_pointer(xcb.Connection, xcb.Root.Window), null);
 		if (handlingEvent == HandlingEvent.MOVE) {
 			geom = xcb_get_geometry_reply(xcb.Connection, xcb_get_geometry(xcb.Connection, win), null);
 
@@ -317,23 +378,23 @@ private:
 				}
 			}
 
-			{
-				import std.algorithm.comparison : max;
-				px = max(px, 0);
-				py = max(py, 0);
-				pw = max(pw, 16);
-				ph = max(ph, 16);
-			}
+			pw = max(pw, 0);
+			ph = max(ph, 0);
 
 			xcb_configure_window(xcb.Connection, win,
 				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
 				[cast(uint)px, cast(uint)py, cast(uint)pw, cast(uint)ph].ptr);
+			if (win == bar.Window) {
+				bar.Width = cast(ushort)pw;
+				bar.Height = cast(ushort)ph;
+			}
 			xcb.Flush();
 		}
 	}
 
 	void buttonRelease(xcb_button_release_event_t * e) {
 		handlingEvent = HandlingEvent.NONE;
+		cursors[Cursors.Normal.id].Apply();
 		xcb.UngrabPointer(XCB_CURRENT_TIME);
 		xcb.Flush();
 	}

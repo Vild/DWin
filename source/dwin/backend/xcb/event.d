@@ -1,6 +1,7 @@
 module dwin.backend.xcb.event;
 
 enum XCBEvent {
+	XCB_NULL_EVENT = 0,
 	XCB_KEY_PRESS = 2,
 	XCB_KEY_RELEASE = 3,
 	XCB_BUTTON_PRESS = 4,

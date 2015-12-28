@@ -14,7 +14,9 @@ public:
 
 		window = xcb_generate_id(xcb.Connection);
 
-		xcb_create_window(xcb.Connection, XCB_COPY_FROM_PARENT, window, xcb.Screen.root, 0, 0, width, height, 10, XCB_WINDOW_CLASS_INPUT_OUTPUT, xcb.Screen.root_visual, 0, null);
+		uint eventMask = XCB_EVENT_MASK_EXPOSURE;
+
+		xcb_create_window(xcb.Connection, XCB_COPY_FROM_PARENT, window, xcb.Screen.root, 0, 0, width, height, 10, XCB_WINDOW_CLASS_INPUT_OUTPUT, xcb.Screen.root_visual, XCB_CW_EVENT_MASK, &eventMask);
 		gc = xcb_generate_id(xcb.Connection);
 		xcb_create_gc(xcb.Connection, gc, window, 0, null);
 
@@ -49,8 +51,16 @@ public:
 		xcb_copy_area(xcb.Connection, drawable.Drawable, window, gc, 0, 0, 0, 0, width, height);
 	}
 
+	void ChangeAttributes(uint mask, const uint * value) {
+		xcb_change_window_attributes(xcb.Connection, window, mask, value);
+	}
+
 	@property .Drawable Drawable() { return drawable; }
 	@property xcb_window_t Window() { return window; }
+	@property xcb_gcontext_t GC() { return gc; }
+
+	@property ref ushort Width() { return width; }
+	@property ref ushort Height() { return height; }
 
 private:
 	XCB xcb;

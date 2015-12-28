@@ -19,7 +19,7 @@ public:
 			xcb.Screen.white_pixel,
 			font
 		];
-		xcb_create_gc(xcb.Connection, gc, xcb.Root, mask, properties.ptr);
+		xcb_create_gc(xcb.Connection, gc, xcb.Root.Window, mask, properties.ptr);
 
 		xcb_close_font(xcb.Connection, font);
 	}

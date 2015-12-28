@@ -21,6 +21,14 @@ public:
 		xcb_free_pixmap(xcb.Connection, drawable);
 	}
 
+	void ChangeColor(uint fg, uint bg) {
+		uint[] colors = [
+			fg,
+			bg
+		];
+		xcb_change_gc(xcb.Connection, gc, XCB_GC_FOREGROUND | XCB_GC_BACKGROUND, colors.ptr);
+	}
+
 	void DrawArc(xcb_arc_t[] arcs, bool filled) {
 		if (filled)
 			xcb_poly_fill_arc(xcb.Connection, drawable, gc, cast(uint)arcs.length, arcs.ptr);
@@ -61,7 +69,7 @@ public:
 		this.height = height;
 
 		xcb_free_pixmap(xcb.Connection, drawable);
-		xcb_create_pixmap(xcb.Connection, xcb.Screen.root_depth, drawable, xcb.Root, width, height);
+		xcb_create_pixmap(xcb.Connection, xcb.Screen.root_depth, drawable, xcb.Root.Window, width, height);
 	}
 
 	@property xcb_drawable_t Drawable() { return drawable; }
