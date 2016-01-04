@@ -7,6 +7,7 @@ final class Font {
 public:
 	this(XCB xcb, string name) {
 		import std.string : toStringz;
+
 		this.xcb = xcb;
 
 		xcb_font_t font = xcb_generate_id(xcb.Connection);
@@ -14,11 +15,13 @@ public:
 
 		gc = xcb_generate_id(xcb.Connection);
 		uint mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND | XCB_GC_FONT;
+		//dfmt off
 		uint[] properties = [
 			xcb.Screen.black_pixel,
 			xcb.Screen.white_pixel,
 			font
 		];
+		//dfmt on
 		xcb_create_gc(xcb.Connection, gc, xcb.Root.Window, mask, properties.ptr);
 
 		xcb_close_font(xcb.Connection, font);
@@ -28,7 +31,9 @@ public:
 		xcb_free_gc(xcb.Connection, gc);
 	}
 
-	@property xcb_gcontext_t GC() { return gc; }
+	@property xcb_gcontext_t GC() {
+		return gc;
+	}
 
 private:
 	XCB xcb;

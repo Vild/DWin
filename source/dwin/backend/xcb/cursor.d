@@ -8,11 +8,13 @@ final class Cursor {
 public:
 	this(XCB xcb, CursorIcons icon) {
 		import std.string : toStringz;
+
 		this.xcb = xcb;
 		font = xcb_generate_id(xcb.Connection);
 		xcb_open_font(xcb.Connection, font, 6, "cursor".toStringz);
 
 		cursor = xcb_generate_id(xcb.Connection);
+		//dfmt off
 		xcb_create_glyph_cursor(xcb.Connection,
 			cursor,
 			font,
@@ -22,6 +24,7 @@ public:
 			0, 0, 0,
 			ushort.max, ushort.max, ushort.max
 		);
+		//dfmt on
 	}
 
 	~this() {
@@ -33,7 +36,10 @@ public:
 		xcb.Root.ChangeAttributes(XCB_CW_CURSOR, &cursor);
 	}
 
-	@property xcb_cursor_t Cursor() { return cursor; }
+	@property xcb_cursor_t Cursor() {
+		return cursor;
+	}
+
 private:
 	XCB xcb;
 	xcb_font_t font;

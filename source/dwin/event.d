@@ -19,20 +19,22 @@ public:
 
 	/// Removes a callback $(PARAM cb)
 	void opOpAssign(string op : "-")(cbFunction cb) {
-		remove(cb);
+		Remove(cb);
 	}
 
 	/// Removes a callback $(PARAM cb)
 	void Remove(cbFunction cb) {
 		import std.algorithm.mutation : remove, SwapStrategy;
+
 		callbacks = callbacks.remove!(a => a == cb, SwapStrategy.unstable);
 	}
 
 	/// Calls every functions with the arguments $(PARAM args)
 	void opCall(Args args) {
-		foreach(fn; callbacks)
+		foreach (fn; callbacks)
 			fn(args);
 	}
+
 private:
 	alias cbFunction = void delegate(Args);
 	cbFunction[] callbacks;

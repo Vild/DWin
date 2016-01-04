@@ -2,10 +2,10 @@
 	"name": "dwin",
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2015, wildn00b",
-	"authors": ["wildn00b"],
+	"authors": [
+		"wildn00b"
+	],
 	"dependencies": {
-	  "xcb-d": {
-			"path": "../xcb-d"
-		}
+		"xcb-d": "~>1.11.1"
 	}
 }

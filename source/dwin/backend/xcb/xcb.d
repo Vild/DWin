@@ -25,22 +25,55 @@ public:
 	}
 
 	auto GrabKey(ubyte owner_events, ushort modifiers, xcb_keycode_t key, ubyte pointer_mode, ubyte keyboard_mode) {
-		return xcb_grab_key(connection, owner_events, root.Window, modifiers, key,
-			pointer_mode, keyboard_mode);
+		//dfmt off
+		return xcb_grab_key(
+			connection,
+			owner_events,
+			root.Window,
+			modifiers,
+			key,
+			pointer_mode,
+			keyboard_mode
+		);
+		//dfmt on
 	}
 
-	auto GrabButton(ubyte owner_events, ushort event_mask, ubyte pointer_mode, ubyte keyboard_mode, xcb_cursor_t cursor, ubyte button, ushort modifiers) {
-		return xcb_grab_button(connection, owner_events, root.Window, event_mask,
-			pointer_mode, keyboard_mode, root.Window,
-			cursor, button, modifiers);
+	auto GrabButton(ubyte owner_events, ushort event_mask, ubyte pointer_mode, ubyte keyboard_mode, xcb_cursor_t cursor,
+		ubyte button, ushort modifiers) {
+		//dfmt off
+		return xcb_grab_button(
+			connection,
+			owner_events,
+			root.Window,
+			event_mask,
+			pointer_mode,
+			keyboard_mode,
+			root.Window,
+			cursor,
+			button,
+			modifiers
+		);
+		//dfmt on
 	}
 
-	auto GrabPointer(ubyte owner_events, ushort event_mask, ubyte pointer_mode, ubyte keyboard_mode, xcb_cursor_t cursor, xcb_timestamp_t time) {
-		return xcb_grab_pointer(connection, owner_events, root.Window, event_mask,
-			pointer_mode, keyboard_mode, root.Window, cursor, time);
+	auto GrabPointer(ubyte owner_events, ushort event_mask, ubyte pointer_mode, ubyte keyboard_mode,
+		xcb_cursor_t cursor, xcb_timestamp_t time) {
+		//dfmt off
+		return xcb_grab_pointer(
+			connection,
+			owner_events,
+			root.Window,
+			event_mask,
+			pointer_mode,
+			keyboard_mode,
+			root.Window,
+			cursor,
+			time
+		);
+		//dfmt on
 	}
 
-	auto UngrabPointer(xcb_timestamp_t	 time) {
+	auto UngrabPointer(xcb_timestamp_t time) {
 		return xcb_ungrab_pointer(connection, time);
 	}
 
@@ -48,9 +81,17 @@ public:
 		xcb_flush(connection);
 	}
 
-	@property xcb_connection_t * Connection() { return connection; }
-	@property xcb_screen_t * Screen() { return screen; }
-	@property Window Root() { return root; }
+	@property xcb_connection_t* Connection() {
+		return connection;
+	}
+
+	@property xcb_screen_t* Screen() {
+		return screen;
+	}
+
+	@property Window Root() {
+		return root;
+	}
 
 private:
 	enum conError {
@@ -63,7 +104,7 @@ private:
 	}
 
 	Log log;
-	xcb_connection_t * connection;
-	xcb_screen_t * screen;
+	xcb_connection_t* connection;
+	xcb_screen_t* screen;
 	Window root;
 }

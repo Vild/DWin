@@ -22,10 +22,7 @@ public:
 	}
 
 	void ChangeColor(uint fg, uint bg) {
-		uint[] colors = [
-			fg,
-			bg
-		];
+		uint[] colors = [fg, bg];
 		xcb_change_gc(xcb.Connection, gc, XCB_GC_FOREGROUND | XCB_GC_BACKGROUND, colors.ptr);
 	}
 
@@ -37,11 +34,13 @@ public:
 	}
 
 	void DrawLine(xcb_point_t[] lines, bool relativeToEarlierCoord) {
-		xcb_poly_line(xcb.Connection, relativeToEarlierCoord ? XCB_COORD_MODE_PREVIOUS : XCB_COORD_MODE_ORIGIN, drawable, gc, cast(uint)lines.length, lines.ptr);
+		xcb_poly_line(xcb.Connection, relativeToEarlierCoord ? XCB_COORD_MODE_PREVIOUS : XCB_COORD_MODE_ORIGIN, drawable,
+			gc, cast(uint)lines.length, lines.ptr);
 	}
 
 	void DrawPoint(xcb_point_t[] points, bool relativeToEarlierCoord) {
-		xcb_poly_point(xcb.Connection, relativeToEarlierCoord ? XCB_COORD_MODE_PREVIOUS : XCB_COORD_MODE_ORIGIN, drawable, gc, cast(uint)points.length, points.ptr);
+		xcb_poly_point(xcb.Connection, relativeToEarlierCoord ? XCB_COORD_MODE_PREVIOUS : XCB_COORD_MODE_ORIGIN,
+			drawable, gc, cast(uint)points.length, points.ptr);
 	}
 
 	void DrawRectangle(xcb_rectangle_t[] rectangle, bool filled) {
@@ -61,6 +60,7 @@ public:
 
 	void DrawText(Font font, ushort x, ushort y, string str) {
 		import std.string : toStringz;
+
 		xcb_image_text_8(xcb.Connection, cast(ubyte)str.length, drawable, font.GC, x, y, str.toStringz);
 	}
 
@@ -72,7 +72,10 @@ public:
 		xcb_create_pixmap(xcb.Connection, xcb.Screen.root_depth, drawable, xcb.Root.Window, width, height);
 	}
 
-	@property xcb_drawable_t Drawable() { return drawable; }
+	@property xcb_drawable_t Drawable() {
+		return drawable;
+	}
+
 protected:
 	XCB xcb;
 	ushort width;
