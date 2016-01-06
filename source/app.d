@@ -15,6 +15,16 @@ int main(string[] args) {
 	scope (exit)
 		dwin.destroy;
 
+	import std.process : spawnProcess, kill;
+
+	auto xeyes = spawnProcess("xeyes");
+	scope (exit)
+		kill(xeyes);
+
+	auto xterm1 = spawnProcess("xterm");
+	scope (exit)
+		kill(xterm1);
+
 	dwin.Run();
 
 	return 0;

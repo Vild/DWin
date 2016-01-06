@@ -14,6 +14,7 @@ DISPLAY=$XPORT
 feh --bg-max ~/Pictures/Wallpaper.arch/archwall_dark_purple.png
 xterm &
 xterm &
+sleep 1
 #lxterminal &
 #xeyes &
 
