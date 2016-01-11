@@ -29,8 +29,82 @@ public:
 
 	}
 
+
+	auto GrabKey(ubyte owner_events, ushort modifiers, xcb_keycode_t key, ubyte pointerMode, ubyte keyboardMode) {
+		//dfmt off
+		return xcb_grab_key(
+			xcb.Connection,
+			owner_events,
+			xcb.Root.InternalWindow,
+			modifiers,
+			key,
+			pointerMode,
+			keyboardMode
+		);
+		//dfmt on
+	}
+
+	auto UngrabKey(ubyte owner_events, xcb_keycode_t key, ushort modifiers) {
+		//dfmt off
+		return xcb_ungrab_key(
+			xcb.Connection,
+			key,
+			xcb.Root.InternalWindow,
+			modifiers
+		);
+		//dfmt on
+	}
+
+	auto GrabButton(ubyte owner_events, ushort event_mask, ubyte pointerMode, ubyte keyboardMode, xcb_cursor_t cursor,
+		ubyte button, ushort modifiers) {
+		//dfmt off
+		return xcb_grab_button(
+			xcb.Connection,
+			owner_events,
+			xcb.Root.InternalWindow,
+			event_mask,
+			pointerMode,
+			keyboardMode,
+			xcb.Root.InternalWindow,
+			cursor,
+			button,
+			modifiers
+		);
+		//dfmt on
+	}
+
+	auto UngrabButton(ubyte owner_events, ubyte button, ushort modifiers) {
+		//dfmt off
+		return xcb_ungrab_button(
+			xcb.Connection,
+			button,
+			xcb.Root.InternalWindow,
+			modifiers
+		);
+		//dfmt on
+	}
+
+	auto GrabPointer(ubyte owner_events, ushort event_mask, ubyte pointerMode, ubyte keyboardMode, xcb_cursor_t cursor, xcb_timestamp_t time) {
+		//dfmt off
+		return xcb_grab_pointer(
+			xcb.Connection,
+			owner_events,
+			xcb.Root.InternalWindow,
+			event_mask,
+			pointerMode,
+			keyboardMode,
+			xcb.Root.InternalWindow,
+			cursor,
+			time
+		);
+		//dfmt on
+	}
+
+	auto UngrabPointer(xcb_timestamp_t time) {
+		return xcb_ungrab_pointer(xcb.Connection, time);
+	}
 private:
-	alias mapFunc = void delegate(string key);
+	alias mapFunc = bool delegate(string key);
 	XCB xcb;
 	mapFunc[string] mapping;
 }
