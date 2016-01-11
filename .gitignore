@@ -6,3 +6,5 @@ __dummy.html
 /dwin
 dub.selections.json
 .gdb_history
+*~
+.vscode
