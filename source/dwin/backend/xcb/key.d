@@ -31,8 +31,6 @@ Key ParseKey(string key) {
 }
 
 Modifier KeyCodeToModifier(XCB xcb, xcb_keycode_t keycode) {
-	import std.c.stdlib;
-
 	Modifier modfield;
 	xcb_get_modifier_mapping_reply_t* reply = xcb_get_modifier_mapping_reply(xcb.Connection, xcb_get_modifier_mapping(xcb.Connection),
 		null);
@@ -50,7 +48,7 @@ Modifier KeyCodeToModifier(XCB xcb, xcb_keycode_t keycode) {
 		}
 	}
 
-	free(reply);
+	xcb_free(reply);
 	return modfield;
 }
 
@@ -58,7 +56,7 @@ Modifier KeySymToModifier(XCB xcb, xcb_keysym_t keySym) {
 	enum KEYSYMS_PER_KEYCODE = 4; // From sxhkd's types.h
 	Modifier modfield;
 
-	const xcb_setup_t* setup = xcb.Setup;
+	const xcb_setup_t* setup = xcb_get_setup(xcb.Connection);
 
 	for (ulong keyCode = setup.min_keycode; keyCode <= setup.max_keycode; keyCode++)
 		for (int col = 0; col < KEYSYMS_PER_KEYCODE; col++)
