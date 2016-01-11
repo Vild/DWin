@@ -17,12 +17,12 @@ public:
 		uint mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND | XCB_GC_FONT;
 		//dfmt off
 		uint[] properties = [
-			xcb.Screen.black_pixel,
-			xcb.Screen.white_pixel,
+			xcb.RootScreen.black_pixel,
+			xcb.RootScreen.white_pixel,
 			font
 		];
 		//dfmt on
-		xcb_create_gc(xcb.Connection, gc, xcb.Root.Window, mask, properties.ptr);
+		xcb_create_gc(xcb.Connection, gc, xcb.Root.InternalWindow, mask, properties.ptr);
 
 		xcb_close_font(xcb.Connection, font);
 	}
