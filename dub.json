@@ -1,9 +1,12 @@
 {
 	"name": "dwin",
-	"description": "A minimal D application.",
-	"copyright": "Copyright © 2015, wildn00b",
+	"description": "A dynamic window manager written in D",
+	"copyright": "Copyright © 2015, Dan Printzell",
+	"libs": [
+		"xcb-xinerama"
+	],
 	"authors": [
-		"wildn00b"
+		"Dan Printzell"
 	],
 	"dependencies": {
 		"xcb-d": "~>2.0.0"
