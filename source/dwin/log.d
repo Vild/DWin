@@ -18,9 +18,20 @@ enum LogLevel {
 class Log {
 public:
 	static Log MainLogger() nothrow {
+		import std.process : environment;
+
 		if (mainLogger is null) {
 			mainLogger = new Log();
-			mainLogger.AttachHandler(&TerminalHandler);
+			try {
+				if (environment.get("TERM"))
+					mainLogger.AttachHandler(&TerminalHandler);
+				else
+					mainLogger.AttachHandler(&StdTerminalHandler);
+			}
+			catch (Exception e) {
+				mainLogger.AttachHandler(&StdTerminalHandler);
+			}
+
 			mainLogger.AttachHandler(&FileLog);
 		}
 		return mainLogger;
@@ -218,8 +229,15 @@ private:
 					stdout.flush;
 				}
 			}
-			catch (Exception) {
+			catch (Exception e) {
 				import std.c.stdlib : exit;
+				import std.stdio : stderr;
+
+				try {
+					stderr.writeln(e.toString);
+				}
+				catch (Exception) {
+				}
 
 				exit(-2);
 			}
@@ -254,7 +272,7 @@ private:
 			break;
 		}
 		try {
-			string levelText = format("[%c] [%s]\t %s", icon, module_, message);
+			string levelText = format("[%s] [%s]\t %s", icon, module_, message);
 
 			if (level >= LogLevel.WARNING) {
 				stderr.writeln(levelText);
@@ -264,8 +282,15 @@ private:
 				stdout.flush;
 			}
 		}
-		catch (Exception) {
+		catch (Exception e) {
 			import std.c.stdlib : exit;
+			import std.stdio : stderr;
+
+			try {
+				stderr.writeln(e.toString);
+			}
+			catch (Exception) {
+			}
 
 			exit(-2);
 		}
@@ -306,13 +331,20 @@ private:
 
 			string time = dateTime.toSimpleString;
 
-			string levelText = format("[%c] [%s] [%s]\t %s", icon, module_, time, message);
+			string levelText = format("[%s] [%s] [%s]\t %s", icon, module_, time, message);
 
 			logFile.writeln(levelText);
 			logFile.flush();
 		}
-		catch (Exception) {
+		catch (Exception e) {
 			import std.c.stdlib : exit;
+			import std.stdio : stderr;
+
+			try {
+				stderr.writeln(e.toString);
+			}
+			catch (Exception) {
+			}
 
 			exit(-2);
 		}
