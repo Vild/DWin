@@ -6,6 +6,9 @@ import dwin.backend.xcb.xcb;
 
 import dwin.backend.window;
 import dwin.backend.screen;
+import dwin.backend.layout;
+import dwin.backend.workspace;
+import dwin.backend.container;
 
 import std.container.array;
 
@@ -23,9 +26,8 @@ public:
 		foreach (screen; xcb.Screens)
 			log.Info("Screen: %s", screen.Name);
 
-		while (true) {
+		while (true)
 			xcb.DoEvent();
-		}
 	}
 
 private:
@@ -43,10 +45,17 @@ private:
 
 	void onNewWindow(Window window) {
 		log.Info("New Window: %s", window);
+
+		xcb.Screens[0].Add(window);
+
+		printHierarchy();
 	}
 
 	void onRemoveWindow(Window window) {
 		log.Info("Remove Window: %s", window);
+
+		window.Parent.Remove(window);
+		printHierarchy();
 	}
 
 	void onRequestShowWindow(Window window) {
@@ -92,6 +101,53 @@ private:
 		xcb.OnRequestBorderSizeWindow ~= &onRequestBorderSizeWindow;
 		xcb.OnRequestSiblingWindow ~= &onRequestSiblingWindow;
 		xcb.OnRequestStackModeWindow ~= &onRequestStackModeWindow;
+
+		import std.process;
+
+		auto childEnv = environment.toAA;
+		childEnv["DISPLAY"] = ":8";
+		xcb.BindMgr.Map("Ctrl + Enter", () => cast(void)spawnProcess("xterm", childEnv));
+		xcb.BindMgr.Map("Ctrl + Backspace", () => cast(void)spawnProcess("xeyes", childEnv));
+	}
+
+	import std.stdio;
+
+	void print(Screen screen, int indent) {
+		writefln("%*sScreen: %s", indent * 2, " ", screen.Name);
+		writefln("%*s* OnTop: ", indent * 2, " ");
+		print(screen.OnTop, indent + 1);
+		writefln("%*s* Workspaces: ", indent * 2, " ");
+		foreach (workspace; screen.Workspaces)
+			print(workspace, indent + 1);
+	}
+
+	void print(Workspace workspace, int indent) {
+		writefln("%*s* Name: %s", indent * 2, " ", workspace.Name);
+		writefln("%*s* Layout: ", indent * 2, " ");
+		print(workspace.Root, indent + 1);
+	}
+
+	void print(Container con, int indent) {
+		if (auto win = cast(Window)con)
+			print(win, indent);
+		else if (auto layout = cast(Layout)con)
+			print(layout, indent);
+	}
+
+	void print(Layout layout, int indent) {
+		foreach (container; layout.Containers)
+			print(container, indent + 1);
+	}
+
+	void print(Window window, int indent) {
+		writefln("%*sWindow: %s", indent * 2, " ", window.Title);
+	}
+
+	void printHierarchy() {
+		writeln("===Printing Hierarchy===");
+		foreach (screen; xcb.Screens)
+			print(screen, 0);
+
 	}
 
 }

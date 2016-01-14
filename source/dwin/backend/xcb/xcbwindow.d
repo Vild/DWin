@@ -1,14 +1,22 @@
 module dwin.backend.xcb.xcbwindow;
 
 import xcb.xcb;
+import xcb.ewmh;
+import xcb.icccm;
+
 import dwin.backend.window;
 import dwin.backend.xcb.xcb;
+import dwin.log;
 
 class XCBWindow : Window {
 public:
 	this(XCB xcb, xcb_window_t window) {
 		this.xcb = xcb;
 		this.window = window;
+		this.visible = false;
+		this.dead = false;
+
+		Update();
 	}
 
 	~this() {
@@ -17,16 +25,39 @@ public:
 	}
 
 	@property override string Title() {
-		return "DummyTitle";
+		Update();
+		return title;
 	}
 
 	override void Update() {
+		import std.string : fromStringz;
+
+		if (dead)
+			return;
+
 		xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(xcb.Connection, xcb_get_geometry(xcb.Connection, window), null);
-		x = geom.x;
-		y = geom.y;
-		width = geom.width;
-		height = geom.height;
-		xcb_free(geom);
+		if (geom) {
+			x = geom.x;
+			y = geom.y;
+			width = geom.width;
+			height = geom.height;
+			xcb_free(geom);
+		}
+
+		xcb_ewmh_get_utf8_strings_reply_t ewmh_txt_prop;
+		xcb_icccm_get_text_property_reply_t icccm_txt_prop;
+
+		if ((visible && xcb_ewmh_get_wm_name_reply(xcb.EWMH, xcb_ewmh_get_wm_visible_name(xcb.EWMH, window),
+				&ewmh_txt_prop, null)) || xcb_ewmh_get_wm_name_reply(xcb.EWMH, xcb_ewmh_get_wm_name(xcb.EWMH, window),
+				&ewmh_txt_prop, null)) {
+			title = ewmh_txt_prop.strings.fromStringz.idup;
+			xcb_ewmh_get_utf8_strings_reply_wipe(&ewmh_txt_prop);
+		} else if (xcb_icccm_get_wm_name_reply(xcb.Connection, xcb_icccm_get_wm_name(xcb.Connection, window), &icccm_txt_prop,
+				null)) {
+			title = icccm_txt_prop.name.fromStringz.idup;
+			xcb_icccm_get_text_property_reply_wipe(&icccm_txt_prop);
+		} else
+			title = "ERROR TITLE";
 	}
 
 	override void Move(short x, short y) {
@@ -40,10 +71,12 @@ public:
 	}
 
 	override void Show() {
+		visible = true;
 		Map();
 	}
 
 	override void Hide() {
+		visible = false;
 		Unmap();
 	}
 
@@ -66,4 +99,6 @@ public:
 private:
 	XCB xcb;
 	xcb_window_t window;
+	string title;
+	bool visible;
 }

@@ -3,12 +3,15 @@
 	"description": "A dynamic window manager written in D",
 	"copyright": "Copyright © 2015, Dan Printzell",
 	"libs": [
+		"xcb-ewmh",
+		"xcb-icccm",
+		"xcb-keysyms",
 		"xcb-xinerama"
 	],
 	"authors": [
 		"Dan Printzell"
 	],
 	"dependencies": {
-		"xcb-d": "~>2.0.0"
+		"xcb-d": "~>2.1.0"
 	}
 }

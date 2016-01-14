@@ -10,33 +10,27 @@ enum LayoutType {
 	Tab
 }
 
-abstract class Layout {
+abstract class Layout : Container {
 public:
-	abstract void Add(Container container) {
+	override void Add(Container container) {
 		containers.insertBack(container);
+		container.Parent = this;
 	}
 
-	abstract void Remove(Container container) {
+	override void Remove(Container container) {
 		auto idx = containers[].countUntil(container);
 		assert(idx >= 0);
 		containers.linearRemove(containers[idx .. idx + 1]);
 	}
 
-	abstract void Move(short x, short y) {
+	override void Move(short x, short y) {
 		this.x = x;
 		this.y = y;
 	}
 
-	abstract void Resize(ushort width, ushort height) {
+	override void Resize(ushort width, ushort height) {
 		this.width = width;
 		this.height = height;
-	}
-
-	//void RequestMove();
-	//void RequestResize();
-
-	@property bool ShouldCollapseOnOne() {
-		return true;
 	}
 
 	@property short X() {

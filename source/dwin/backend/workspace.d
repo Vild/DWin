@@ -1,53 +1,47 @@
 module dwin.backend.workspace;
 
 import dwin.backend.container;
+import dwin.backend.layout;
 import dwin.layout.floatinglayout;
 
 class Workspace {
 public:
 	this(string name) {
 		this.name = name;
-		onTopContainers = new FloatingLayout();
+		onTop = new FloatingLayout();
+		root = new FloatingLayout();
 	}
 
 	void Add(Container container) {
-		if (rootContainer)
-			rootContainer.Add(container);
-		else
-			rootContainer = container;
+		root.Add(container);
 	}
 
 	void Remove(Container container) {
-		assert(rootContainer);
-
-		if (rootContainer == container)
-			rootContainer = null;
-		else
-			rootContainer.Remove(container);
+		root.Remove(container);
 	}
 
 	void AddOnTop(Container container) {
-		onTopContainers.Add(container);
+		onTop.Add(container);
 	}
 
 	void RemoveOnTop(Container container) {
-		onTopContainers.Remove(container);
+		onTop.Remove(container);
 	}
 
 	@property ref string Name() {
 		return name;
 	}
 
-	@property Container RootContainer() {
-		return rootContainer;
+	@property Layout Root() {
+		return root;
 	}
 
-	@property FloatingLayout OnTopContainers() {
-		return onTopContainers;
+	@property FloatingLayout OnTop() {
+		return onTop;
 	}
 
 protected:
 	string name;
-	Container rootContainer;
-	FloatingLayout onTopContainers;
+	Layout root;
+	FloatingLayout onTop;
 }

@@ -5,10 +5,12 @@ import dwin.event;
 
 import xcb.xcb;
 import xcb.keysyms;
+import xcb.ewmh;
 import xcb.xinerama;
 import dwin.backend.screen;
 import dwin.backend.window;
 import dwin.backend.xcb.atom;
+import dwin.backend.xcb.bindmanager;
 import dwin.backend.xcb.event;
 import dwin.backend.xcb.key;
 import dwin.backend.xcb.cursor;
@@ -16,8 +18,8 @@ import dwin.backend.xcb.xcbwindow;
 import dwin.util.data;
 
 import std.traits;
-import std.container.array;
 import std.algorithm.searching;
+import std.algorithm.mutation;
 public import std.c.stdlib : xcb_free = free;
 
 class XCB {
@@ -30,9 +32,15 @@ public:
 			log.Fatal("Error while connecting to X11, %s", err);
 		log.Info("Successfully connect to X11!");
 
+		symbols = xcb_key_symbols_alloc(connection);
+		auto cookie = xcb_ewmh_init_atoms(connection, &ewmhConnection);
+		if (!xcb_ewmh_init_atoms_replies(&ewmhConnection, cookie, null))
+			log.Fatal("Could not connect to ewmh!");
+
 		rootScreen = getScreen(defaultScreen);
 		root = new XCBWindow(this, rootScreen.root);
-		symbols = xcb_key_symbols_alloc(connection);
+
+		bindMgr = new BindManager(this);
 
 		checkOtherWM();
 		setup();
@@ -58,9 +66,20 @@ public:
 			break;
 
 		case XCB_PROPERTY_NOTIFY:
-		case XCB_CONFIGURE_NOTIFY:
-		case XCB_MAP_NOTIFY:
+			auto notify = cast(xcb_property_notify_event_t*)e;
+
+			if (notify.state == XCB_PROPERTY_DELETE)
+				break; // Ignore
+			else
+				log.Error("Doesn't handle XCB_PROPERTY_NOTIFY state: %s", notify.state);
+			break;
 		case XCB_MAPPING_NOTIFY:
+			auto notify = cast(xcb_mapping_notify_event_t*)e;
+
+			xcb_refresh_keyboard_mapping(symbols, notify);
+			//if(ev->request == XCB_MAPPING_NOTIFY)
+			//Regrab();
+
 			break;
 		case XCB_MOTION_NOTIFY: //NO MORE SPAM
 			break;
@@ -74,19 +93,20 @@ public:
 
 		case XCB_DESTROY_NOTIFY:
 			auto notify = cast(xcb_destroy_notify_event_t*)e;
-			long idx = -1;
-			foreach (window; windows) {
-				idx++;
-				if (window.InternalWindow == notify.window)
-					break;
-			}
 
-			if (idx != -1) {
-				auto window = windows[idx];
-				onNewWindow(window);
-				window.destroy;
-				windows.linearRemove(windows[idx .. idx + 1]);
-			}
+			ulong idx;
+			auto window = findWindow(notify.window, &idx);
+			window.Dead = true;
+			onRemoveWindow(window);
+			window.destroy;
+			windows = windows.remove(idx);
+
+			break;
+
+		case XCB_MAP_NOTIFY: // Skip check of this because every time we call xcb_map_window, it will trigger this event
+			auto notify = cast(xcb_map_notify_event_t*)e;
+			if (notify.override_redirect)
+				log.Warning("Map notify with override_redirect!");
 			break;
 
 		case XCB_MAP_REQUEST:
@@ -103,22 +123,14 @@ public:
 				onRequestHideWindow(window);
 			break;
 
-			/*case XCB_PROPERTY_NOTIFY:
-			auto notify = cast(xcb_property_notify_event_t*)e;
-			foreach (wmAtom; EnumMembers!WMAtoms)
-				if (lookupWMAtoms[wmAtom.id].atom == notify.atom) {
-					log.Info("\tWMAtom: %s", wmAtom.name);
-					break switchBreak;
-				}
-
-			foreach (netAtom; EnumMembers!NETAtoms)
-				if (lookupNETAtoms[netAtom.id].atom == notify.atom) {
-					log.Info("\tNETAtoms: %s", netAtom.name);
-					break switchBreak;
-				}
-
-			log.Info("\tAtom: %s", cast(xcb_atom_enum_t)notify.atom);
-			break;*/
+		case XCB_CONFIGURE_NOTIFY:
+			auto notify = cast(xcb_configure_notify_event_t*)e;
+			if (notify.window == Root.InternalWindow) {
+				log.Error("Didn't handle window configure notify, PLEASE FIX"); //TODO: Fix this
+				if (Root.Width != notify.width || Root.Height != notify.height)
+					log.Info("Root window went from %sx%s to %sx%s", Root.Width, Root.Height, notify.width, notify.height);
+			}
+			break;
 
 		case XCB_CONFIGURE_REQUEST:
 			auto request = cast(xcb_configure_request_event_t*)e;
@@ -146,8 +158,19 @@ public:
 			if (request.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
 				onRequestStackModeWindow(window, request.stack_mode);
 			break;
-		}
 
+		case XCB_CLIENT_MESSAGE:
+			auto msg = cast(xcb_client_message_event_t*)e;
+			log.Info("ClientMessage: format: %s, window: %s, type: %s, data: %s", msg.format, msg.window, msg.type, msg.data);
+			break;
+
+		case XCB_KEY_PRESS:
+			bindMgr.HandleKeyEvent(cast(xcb_key_press_event_t*)e);
+			break;
+
+		case XCB_KEY_RELEASE:
+			break;
+		}
 		Flush();
 	}
 
@@ -167,6 +190,10 @@ public:
 		return rootScreen;
 	}
 
+	@property BindManager BindMgr() {
+		return bindMgr;
+	}
+
 	@property Screen[] Screens() {
 		return screens;
 	}
@@ -179,7 +206,11 @@ public:
 		return symbols;
 	}
 
-	@property ref Array!XCBWindow Windows() {
+	@property xcb_ewmh_connection_t* EWMH() {
+		return &ewmhConnection;
+	}
+
+	@property ref XCBWindow[] Windows() {
 		return windows;
 	}
 
@@ -270,13 +301,15 @@ private:
 	int defaultScreen;
 	xcb_screen_t* rootScreen;
 	xcb_key_symbols_t* symbols;
+	xcb_ewmh_connection_t ewmhConnection;
 	XCBWindow root;
 
 	Atom[EnumCount!(WMAtoms)()] lookupWMAtoms;
 	Atom[EnumCount!(NETAtoms)()] lookupNETAtoms;
 	Cursor[EnumCount!(Cursors)()] cursors;
 
-	Array!XCBWindow windows;
+	BindManager bindMgr;
+	XCBWindow[] windows;
 	Screen[] screens;
 
 	Event!(Window) onNewWindow;
@@ -289,10 +322,13 @@ private:
 	Event!(Window, Window) onRequestSiblingWindow;
 	Event!(Window, ubyte) onRequestStackModeWindow;
 
-	XCBWindow findWindow(xcb_window_t id) {
-		foreach (window; windows)
-			if (window.InternalWindow == id)
+	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
+		foreach (i, window; windows)
+			if (window.InternalWindow == id) {
+				if (idx != null)
+					*idx = i;
 				return window;
+			}
 		return null;
 	}
 

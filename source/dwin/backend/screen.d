@@ -14,16 +14,24 @@ public:
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		onTopContainers = new FloatingLayout();
+		onTop = new FloatingLayout();
 		this.workspaces = workspaces;
 	}
 
+	void Add(Container container) {
+		workspaces[currentWorkspace].Add(container);
+	}
+
+	void Remove(Container container) {
+		workspaces[currentWorkspace].Remove(container);
+	}
+
 	void AddOnTop(Container container) {
-		onTopContainers.Add(container);
+		onTop.Add(container);
 	}
 
 	void RemoveOnTop(Container container) {
-		onTopContainers.Remove(container);
+		onTop.Remove(container);
 	}
 
 	@property ref string Name() {
@@ -54,8 +62,8 @@ public:
 		return workspaces;
 	}
 
-	@property FloatingLayout OnTopContainers() {
-		return onTopContainers;
+	@property FloatingLayout OnTop() {
+		return onTop;
 	}
 
 protected:
@@ -68,5 +76,5 @@ protected:
 	ulong currentWorkspace;
 
 	Workspace[] workspaces;
-	FloatingLayout onTopContainers;
+	FloatingLayout onTop;
 }

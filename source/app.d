@@ -13,23 +13,36 @@ int main(string[] args) {
 	}
 
 	string title = "DWin - D always win!";
-	string size = "1280x720";
+	string size = "1920x1080";
 
-	auto Xephyr = spawnProcess([`Xephyr`, `-name`, title, `-ac`, `-br`, `-noreset`, `-screen`, size, `:8`]);
+	/*
+
+rules:      evdev
+model:      pc105
+layout:     se
+options:    terminate:ctrl_alt_bksp
+
+-keybd ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=terminate:ctrl_alt_bksp
+
+*/
+
+	auto Xephyr = spawnProcess([`Xephyr`, `-keybd`, `ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=`,
+		`-name`, title, `-ac`, `-br`, `-noreset`, `-screen`, size, `:8`]);
 	scope (exit)
 		kill(Xephyr);
 
 	import core.thread : Thread;
 	import core.time : seconds;
 
+	auto childEnv = environment.toAA;
+	childEnv["DISPLAY"] = ":8";
+
 	Thread.sleep(1.seconds);
+	spawnProcess(["feh", "--bg-scale", "http://wild.tk/DWinBG.png"], childEnv);
 
 	auto dwin = new DWin();
 	scope (exit)
 		dwin.destroy;
-
-	auto childEnv = environment.toAA;
-	childEnv["DISPLAY"] = ":8";
 
 	Pid xeyes;
 	Pid xterm;
@@ -41,7 +54,6 @@ int main(string[] args) {
 
 	auto spawnThread = new Thread(() {
 		Thread.sleep(1.seconds);
-		spawnProcess(["feh", "--bg-scale", "http://wild.tk/DWinBG.png"], childEnv);
 		xeyes = spawnProcess("xeyes", childEnv);
 		xterm = spawnProcess("xterm", childEnv);
 

@@ -20,8 +20,4 @@ public:
 	override void Resize(ushort width, ushort height) {
 		super.Resize(width, height);
 	}
-
-	@property override bool ShouldCollapseOnOne() {
-		return false;
-	}
 }
