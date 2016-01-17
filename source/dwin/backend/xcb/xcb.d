@@ -81,7 +81,23 @@ public:
 			//Regrab();
 
 			break;
-		case XCB_MOTION_NOTIFY: //NO MORE SPAM
+		case XCB_MOTION_NOTIFY:
+			auto notify = cast(xcb_motion_notify_event_t*)e;
+			onMouseMotion(notify.root_x, notify.root_y);
+			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, notify.time);
+			break;
+
+		case XCB_BUTTON_PRESS:
+			xcb_button_press_event_t* press = cast(xcb_button_press_event_t*)e;
+			auto window = findWindow(press.child);
+			onMousePress(window, press.root_x, press.root_y);
+			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, press.time);
+			break;
+		case XCB_BUTTON_RELEASE:
+			xcb_button_release_event_t* release = cast(xcb_button_release_event_t*)e;
+			auto window = findWindow(release.child);
+			onMouseRelease(window, release.root_x, release.root_y);
+			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, release.time);
 			break;
 
 		case XCB_CREATE_NOTIFY:
@@ -165,10 +181,11 @@ public:
 			break;
 
 		case XCB_KEY_PRESS:
-			bindMgr.HandleKeyEvent(cast(xcb_key_press_event_t*)e);
+			bindMgr.HandleKeyDownEvent(cast(xcb_key_press_event_t*)e);
 			break;
 
 		case XCB_KEY_RELEASE:
+			bindMgr.HandleKeyUpEvent(cast(xcb_key_press_event_t*)e);
 			break;
 		}
 		Flush();
@@ -188,6 +205,10 @@ public:
 
 	@property xcb_screen_t* RootScreen() {
 		return rootScreen;
+	}
+
+	@property Cursor[] Cursors() {
+		return cursors;
 	}
 
 	@property BindManager BindMgr() {
@@ -250,6 +271,18 @@ public:
 		return onRequestStackModeWindow;
 	}
 
+	@property ref auto OnMousePress() {
+		return onMousePress;
+	}
+
+	@property ref auto OnMouseRelease() {
+		return onMouseRelease;
+	}
+
+	@property ref auto OnMouseMotion() {
+		return onMouseMotion;
+	}
+
 private:
 	enum conError {
 		Error = 1,
@@ -289,7 +322,7 @@ private:
 		ClientList = AtomName(7, "_NET_CLIENT_LIST")
 	}
 
-	enum Cursors : CursorType {
+	enum Pointers : CursorType {
 		Normal = CursorType(0, CursorIcons.XC_left_ptr),
 		Resizing = CursorType(1, CursorIcons.XC_sizing),
 		Moving = CursorType(2, CursorIcons.XC_fleur)
@@ -306,7 +339,7 @@ private:
 
 	Atom[EnumCount!(WMAtoms)()] lookupWMAtoms;
 	Atom[EnumCount!(NETAtoms)()] lookupNETAtoms;
-	Cursor[EnumCount!(Cursors)()] cursors;
+	Cursor[EnumCount!(Pointers)()] cursors;
 
 	BindManager bindMgr;
 	XCBWindow[] windows;
@@ -322,6 +355,10 @@ private:
 	Event!(Window, Window) onRequestSiblingWindow;
 	Event!(Window, ubyte) onRequestStackModeWindow;
 
+	Event!(Window, short, short) onMousePress;
+	Event!(Window, short, short) onMouseRelease;
+	Event!(short, short) onMouseMotion;
+
 	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
 		foreach (i, window; windows)
 			if (window.InternalWindow == id) {
@@ -329,6 +366,7 @@ private:
 					*idx = i;
 				return window;
 			}
+
 		return null;
 	}
 
@@ -348,10 +386,10 @@ private:
 		foreach (netAtom; EnumMembers!NETAtoms)
 			lookupNETAtoms[netAtom.id] = Atom(this, netAtom.name);
 
-		foreach (cursor; EnumMembers!Cursors)
+		foreach (cursor; EnumMembers!Pointers)
 			cursors[cursor.id] = new Cursor(this, cursor.cursor);
 
-		cursors[Cursors.Normal.id].Apply();
+		cursors[Pointers.Normal.id].Apply();
 
 		lookupNETAtoms[NETAtoms.Supported.id].Change(root, lookupNETAtoms);
 

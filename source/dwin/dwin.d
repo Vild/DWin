@@ -1,5 +1,7 @@
 module dwin.dwin;
 
+import std.stdio;
+
 import dwin.log;
 import dwin.event;
 import dwin.backend.xcb.xcb;
@@ -106,11 +108,9 @@ private:
 
 		auto childEnv = environment.toAA;
 		childEnv["DISPLAY"] = ":8";
-		xcb.BindMgr.Map("Ctrl + Enter", () => cast(void)spawnProcess("xterm", childEnv));
-		xcb.BindMgr.Map("Ctrl + Backspace", () => cast(void)spawnProcess("xeyes", childEnv));
+		xcb.BindMgr.Map("Ctrl + Enter", (bool) => cast(void)spawnProcess("xterm", childEnv));
+		xcb.BindMgr.Map("Ctrl + Backspace", (bool) => cast(void)spawnProcess("xeyes", childEnv));
 	}
-
-	import std.stdio;
 
 	void print(Screen screen, int indent) {
 		writefln("%*sScreen: %s", indent * 2, " ", screen.Name);

@@ -11,7 +11,7 @@ import dwin.log;
 
 final class BindManager {
 public:
-	alias MapBind = void delegate();
+	alias MapBind = void delegate(bool isPressed);
 	struct KeyBind {
 		Key key;
 		Modifier modifier;
@@ -34,7 +34,7 @@ public:
 
 	~this() {
 		ungrabKey(XCB_GRAB_ANY, XCB_MOD_MASK_ANY);
-		ungrabPointer(XCB_CURRENT_TIME);
+		UngrabPointer(XCB_CURRENT_TIME);
 	}
 
 	void Rebind() {
@@ -92,11 +92,38 @@ public:
 		mappings.remove(keyBind);
 	}
 
-	void HandleKeyEvent(xcb_key_press_event_t* e) {
+	void HandleKeyDownEvent(xcb_key_press_event_t* e) {
 		xcb_keysym_t key = xcb_key_press_lookup_keysym(xcb.Symbols, e, 0);
 		KeyBind keyBind = KeyBind(Key(key), cast(xcb_mod_mask_t)(e.state & ~Key.NumlockMask));
 		if (auto map = keyBind in mappings)
-			(*map)();
+			(*map)(true);
+	}
+
+	void HandleKeyUpEvent(xcb_key_press_event_t* e) {
+		xcb_keysym_t key = xcb_key_press_lookup_keysym(xcb.Symbols, e, 0);
+		KeyBind keyBind = KeyBind(Key(key), cast(xcb_mod_mask_t)(e.state & ~Key.NumlockMask));
+		if (auto map = keyBind in mappings)
+			(*map)(false);
+	}
+
+	auto GrabPointer(bool owner_events, ushort event_mask, ubyte pointerMode, ubyte keyboardMode, xcb_cursor_t cursor, xcb_timestamp_t time) {
+		//dfmt off
+		return xcb_grab_pointer(
+			xcb.Connection,
+			owner_events,
+			xcb.Root.InternalWindow,
+			event_mask,
+			pointerMode,
+			keyboardMode,
+			xcb.Root.InternalWindow,
+			cursor,
+			time
+		);
+		//dfmt on
+	}
+
+	auto UngrabPointer(xcb_timestamp_t time) {
+		return xcb_ungrab_pointer(xcb.Connection, time);
 	}
 
 private:
@@ -176,25 +203,5 @@ private:
 			modifiers
 		);
 		//dfmt on
-	}
-
-	auto grabPointer(bool owner_events, ushort event_mask, ubyte pointerMode, ubyte keyboardMode, xcb_cursor_t cursor, xcb_timestamp_t time) {
-		//dfmt off
-		return xcb_grab_pointer(
-			xcb.Connection,
-			owner_events,
-			xcb.Root.InternalWindow,
-			event_mask,
-			pointerMode,
-			keyboardMode,
-			xcb.Root.InternalWindow,
-			cursor,
-			time
-		);
-		//dfmt on
-	}
-
-	auto ungrabPointer(xcb_timestamp_t time) {
-		return xcb_ungrab_pointer(xcb.Connection, time);
 	}
 }
