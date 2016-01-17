@@ -25,14 +25,13 @@ public:
 	}
 
 	void Run() {
-		foreach (screen; xcb.Screens)
-			log.Info("Screen: %s", screen.Name);
-
-		while (true)
+		quit = false;
+		while (!quit)
 			xcb.DoEvent();
 	}
 
 private:
+	bool quit;
 	Log log;
 	XCB xcb;
 
@@ -104,10 +103,11 @@ private:
 		xcb.OnRequestSiblingWindow ~= &onRequestSiblingWindow;
 		xcb.OnRequestStackModeWindow ~= &onRequestStackModeWindow;
 
-		import std.process;
+		import std.process : environment, spawnProcess;
 
 		auto childEnv = environment.toAA;
 		childEnv["DISPLAY"] = ":8";
+		xcb.BindMgr.Map("Escape", (bool) => cast(void)(quit = true));
 		xcb.BindMgr.Map("Ctrl + Enter", (bool) => cast(void)spawnProcess("xterm", childEnv));
 		xcb.BindMgr.Map("Ctrl + Backspace", (bool) => cast(void)spawnProcess("xeyes", childEnv));
 	}
@@ -147,7 +147,6 @@ private:
 		writeln("===Printing Hierarchy===");
 		foreach (screen; xcb.Screens)
 			print(screen, 0);
-
 	}
 
 }
