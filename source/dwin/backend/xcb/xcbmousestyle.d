@@ -1,12 +1,13 @@
-module dwin.backend.xcb.cursor;
+module dwin.backend.xcb.xcbmousestyle;
 
 import xcb.xcb;
 
 import dwin.backend.xcb.xcb;
+import dwin.backend.mousestyle;
 
-final class Cursor {
+final class XCBMouseStyle : MouseStyle {
 public:
-	this(XCB xcb, CursorIcons icon) {
+	this(XCB xcb, XCBMouseIcons icon) {
 		import std.string : toStringz;
 
 		this.xcb = xcb;
@@ -32,7 +33,7 @@ public:
 		xcb_close_font(xcb.Connection, font);
 	}
 
-	void Apply() {
+	override void Apply() {
 		xcb.Root.ChangeAttributes(XCB_CW_CURSOR, &cursor);
 	}
 
@@ -46,7 +47,7 @@ private:
 	xcb_cursor_t cursor;
 }
 
-enum CursorIcons : ushort {
+enum XCBMouseIcons : ushort {
 	XC_X_cursor = 0,
 	XC_arrow = 2,
 	XC_based_arrow_down = 4,

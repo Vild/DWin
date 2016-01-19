@@ -114,7 +114,7 @@ private:
 	}
 
 	version (Posix) {
-		enum  {
+		enum {
 			COLOR_OFF = "\x1b[0m", /// reset color
 
 			// Regular Colors

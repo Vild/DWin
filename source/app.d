@@ -16,18 +16,16 @@ int main(string[] args) {
 	string size = "1920x1080";
 
 	/*
+		rules:      evdev
+		model:      pc105
+		layout:     se
+		options:    terminate:ctrl_alt_bksp
 
-rules:      evdev
-model:      pc105
-layout:     se
-options:    terminate:ctrl_alt_bksp
-
--keybd ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=terminate:ctrl_alt_bksp
-
-*/
+		-keybd ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=terminate:ctrl_alt_bksp
+	*/
 
 	auto Xephyr = spawnProcess([`Xephyr`, `-keybd`, `ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=`,
-		`-name`, title, `-ac`, `-br`, `-noreset`, `-screen`, size, `:8`]);
+			`-name`, title, `-ac`, `-br`, `-noreset`, `-screen`, size, `:8`]);
 	scope (exit)
 		kill(Xephyr);
 

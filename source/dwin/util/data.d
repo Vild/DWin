@@ -8,3 +8,16 @@ static size_t EnumCount(T)() {
 		len++;
 	return len;
 }
+
+struct vec2 {
+	int x;
+	int y;
+}
+
+struct Geometry {
+	int x;
+	int y;
+
+	int width;
+	int height;
+}

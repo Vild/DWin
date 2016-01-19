@@ -34,6 +34,7 @@ private:
 	bool quit;
 	Log log;
 	XCB xcb;
+	Window window;
 
 	extern (C) static void sigchld(int) nothrow @nogc {
 		import core.sys.posix.signal : signal, SIGCHLD, SIG_ERR;
@@ -48,15 +49,12 @@ private:
 		log.Info("New Window: %s", window);
 
 		xcb.Screens[0].Add(window);
-
-		printHierarchy();
 	}
 
 	void onRemoveWindow(Window window) {
 		log.Info("Remove Window: %s", window);
 
 		window.Parent.Remove(window);
-		printHierarchy();
 	}
 
 	void onRequestShowWindow(Window window) {
@@ -92,6 +90,14 @@ private:
 		//TODO: implement?
 	}
 
+	void onMouseMotion(short x, short y) {
+		auto m = xcb.Mouse;
+		m.Set(x, y);
+		if (window)
+			if (Layout parent = window.Parent)
+				parent.MouseMotion(window, m);
+	}
+
 	void setup() {
 		xcb.OnNewWindow ~= &onNewWindow;
 		xcb.OnRemoveWindow ~= &onRemoveWindow;
@@ -103,13 +109,58 @@ private:
 		xcb.OnRequestSiblingWindow ~= &onRequestSiblingWindow;
 		xcb.OnRequestStackModeWindow ~= &onRequestStackModeWindow;
 
+		xcb.OnMouseMotion ~= &onMouseMotion;
+
 		import std.process : environment, spawnProcess;
 
 		auto childEnv = environment.toAA;
 		childEnv["DISPLAY"] = ":8";
-		xcb.BindMgr.Map("Escape", (bool) => cast(void)(quit = true));
-		xcb.BindMgr.Map("Ctrl + Enter", (bool) => cast(void)spawnProcess("xterm", childEnv));
-		xcb.BindMgr.Map("Ctrl + Backspace", (bool) => cast(void)spawnProcess("xeyes", childEnv));
+		xcb.BindMgr.Map("Escape", delegate(bool v) { quit = true; });
+		xcb.BindMgr.Map("Ctrl + Enter", delegate(bool v) {
+			if (v)
+				spawnProcess("xterm", childEnv);
+		});
+		xcb.BindMgr.Map("Ctrl + Backspace", delegate(bool v) {
+			if (v)
+				spawnProcess("xeyes", childEnv);
+		});
+
+		xcb.BindMgr.Map("Ctrl + F5", delegate(bool v) {
+			if (v)
+				printHierarchy();
+		});
+
+		xcb.BindMgr.Map("Ctrl + Button1", delegate(bool v) {
+			auto m = xcb.Mouse;
+			if (v) {
+				window = xcb.FindWindow(m.X, m.Y);
+				log.Warning("Window: %s, Mouse: %s", window, m);
+				if (window)
+					if (Layout parent = window.Parent)
+						parent.MouseMovePressed(window, m);
+			} else {
+				if (window)
+					if (Layout parent = window.Parent)
+						parent.MouseMoveReleased(window, m);
+				window = null;
+			}
+		});
+
+		xcb.BindMgr.Map("Ctrl + Button3", delegate(bool v) {
+			auto m = xcb.Mouse;
+			if (v) {
+				window = xcb.FindWindow(m.X, m.Y);
+				log.Warning("Window: %s, Mouse: %s", window, m);
+				if (window)
+					if (Layout parent = window.Parent)
+						parent.MouseResizePressed(window, m);
+			} else {
+				if (window)
+					if (Layout parent = window.Parent)
+						parent.MouseResizeReleased(window, m);
+				window = null;
+			}
+		});
 	}
 
 	void print(Screen screen, int indent) {
@@ -135,6 +186,7 @@ private:
 	}
 
 	void print(Layout layout, int indent) {
+		writefln("%*s* Type: %s", indent * 2, " ", typeid(layout));
 		foreach (container; layout.Containers)
 			print(container, indent + 1);
 	}

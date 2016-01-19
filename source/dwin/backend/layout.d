@@ -3,6 +3,7 @@ module dwin.backend.layout;
 import std.container.array;
 import std.algorithm.searching;
 import dwin.backend.container;
+import dwin.backend.mouse;
 
 enum LayoutType {
 	Float,
@@ -23,6 +24,15 @@ public:
 		containers.linearRemove(containers[idx .. idx + 1]);
 	}
 
+	abstract void MouseMovePressed(Container target, Mouse mouse);
+	abstract void MouseResizeReleased(Container target, Mouse mouse);
+	abstract void MouseMoveReleased(Container target, Mouse mouse);
+	abstract void MouseResizePressed(Container target, Mouse mouse);
+	abstract void MouseMotion(Container target, Mouse mouse);
+
+	override void Update() {
+	}
+
 	override void Move(short x, short y) {
 		this.x = x;
 		this.y = y;
@@ -33,44 +43,7 @@ public:
 		this.height = height;
 	}
 
-	@property short X() {
-		return x;
-	}
-
-	@property short X(short x) {
-		this.x = x;
-		Move(x, y);
-		return this.x;
-	}
-
-	@property short Y() {
-		return y;
-	}
-
-	@property short Y(short y) {
-		this.y = y;
-		Move(x, y);
-		return this.y;
-	}
-
-	@property ushort Width() {
-		return width;
-	}
-
-	@property ushort Width(ushort width) {
-		this.width = width;
-		Resize(width, height);
-		return this.width;
-	}
-
-	@property ushort Height() {
-		return height;
-	}
-
-	@property ushort Height(ushort height) {
-		this.height = height;
-		Resize(width, height);
-		return this.height;
+	override void Focus() {
 	}
 
 	@property Array!Container Containers() {
@@ -78,9 +51,5 @@ public:
 	}
 
 protected:
-	short x;
-	short y;
-	ushort width;
-	ushort height;
 	Array!Container containers;
 }

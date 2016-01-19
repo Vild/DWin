@@ -13,8 +13,8 @@ import dwin.backend.xcb.atom;
 import dwin.backend.xcb.bindmanager;
 import dwin.backend.xcb.event;
 import dwin.backend.xcb.key;
-import dwin.backend.xcb.cursor;
 import dwin.backend.xcb.xcbwindow;
+import dwin.backend.xcb.xcbmouse;
 import dwin.util.data;
 
 import std.traits;
@@ -39,6 +39,7 @@ public:
 
 		rootScreen = getScreen(defaultScreen);
 		root = new XCBWindow(this, rootScreen.root);
+		mouse = new XCBMouse(this);
 
 		bindMgr = new BindManager(this);
 
@@ -56,7 +57,6 @@ public:
 
 		XCBEvent ev = cast(XCBEvent)(e.response_type & ~0x80);
 
-	switchBreak:
 		switch (ev) with (XCBEvent) {
 		default:
 			log.Error("Event caught: %s\tNo action done!", ev);
@@ -73,14 +73,15 @@ public:
 			else
 				log.Error("Doesn't handle XCB_PROPERTY_NOTIFY state: %s", notify.state);
 			break;
+
 		case XCB_MAPPING_NOTIFY:
 			auto notify = cast(xcb_mapping_notify_event_t*)e;
 
 			xcb_refresh_keyboard_mapping(symbols, notify);
-			//if(ev->request == XCB_MAPPING_NOTIFY)
-			//Regrab();
-
+			if (notify.request == XCB_MAPPING_NOTIFY)
+				bindMgr.Rebind();
 			break;
+
 		case XCB_MOTION_NOTIFY:
 			auto notify = cast(xcb_motion_notify_event_t*)e;
 			onMouseMotion(notify.root_x, notify.root_y);
@@ -89,15 +90,24 @@ public:
 
 		case XCB_BUTTON_PRESS:
 			xcb_button_press_event_t* press = cast(xcb_button_press_event_t*)e;
-			auto window = findWindow(press.child);
-			onMousePress(window, press.root_x, press.root_y);
+			//auto window = findWindow(press.child);
+			bindMgr.HandleButtonPressEvent(press);
 			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, press.time);
 			break;
+
 		case XCB_BUTTON_RELEASE:
 			xcb_button_release_event_t* release = cast(xcb_button_release_event_t*)e;
-			auto window = findWindow(release.child);
-			onMouseRelease(window, release.root_x, release.root_y);
+			//auto window = findWindow(release.child);
+			bindMgr.HandleButtonReleaseEvent(release);
 			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, release.time);
+			break;
+
+		case XCB_KEY_PRESS:
+			bindMgr.HandleKeyPressEvent(cast(xcb_key_press_event_t*)e);
+			break;
+
+		case XCB_KEY_RELEASE:
+			bindMgr.HandleKeyReleaseEvent(cast(xcb_key_release_event_t*)e);
 			break;
 
 		case XCB_CREATE_NOTIFY:
@@ -179,20 +189,66 @@ public:
 			auto msg = cast(xcb_client_message_event_t*)e;
 			log.Info("ClientMessage: format: %s, window: %s, type: %s, data: %s", msg.format, msg.window, msg.type, msg.data);
 			break;
-
-		case XCB_KEY_PRESS:
-			bindMgr.HandleKeyDownEvent(cast(xcb_key_press_event_t*)e);
-			break;
-
-		case XCB_KEY_RELEASE:
-			bindMgr.HandleKeyUpEvent(cast(xcb_key_press_event_t*)e);
-			break;
 		}
 		Flush();
 	}
 
 	void Flush() {
 		xcb_flush(connection);
+	}
+
+	Window FindWindow(short x, short y) {
+		import dwin.backend.layout : Layout;
+		import dwin.backend.container : Container;
+		import dwin.backend.workspace : Workspace;
+
+		Window traverseWin(Window window, short x, short y) {
+			window.Update();
+			log.Debug("%s >= %s && %s <= %s && %s >= %s && %s <= %s", x, window.X, x, window.X + window.Width, y,
+					window.Y, y, window.Y + window.Height);
+			if (x >= window.X && x <= window.X + window.Width && y >= window.Y && y <= window.Y + window.Height)
+				return window;
+			else
+				return null;
+		}
+
+		Window traverseCon(Container con, short x, short y) {
+			if (auto window = cast(Window)con) {
+				if (auto win = traverseWin(window, x, y))
+					return win;
+			} else if (auto layout = cast(Layout)con)
+				foreach (container; layout.Containers)
+					if (auto win = traverseCon(container, x, y))
+						return win;
+			return null;
+		}
+
+		Window traverseWorkspace(Workspace workspace, short x, short y) {
+			if (auto win = traverseCon(workspace.Root, x, y))
+				return win;
+			return null;
+		}
+
+		Window traverseLayout(Layout layout, short x, short y) {
+			foreach (container; layout.Containers)
+				if (auto win = traverseCon(container, x, y))
+					return win;
+			return null;
+		}
+
+		Window traverseScreen(Screen screen, short x, short y) {
+			if (auto win = traverseLayout(screen.OnTop, x, y))
+				return win;
+			foreach (workspace; screen.Workspaces)
+				if (auto win = traverseWorkspace(workspace, x, y))
+					return win;
+			return null;
+		}
+
+		foreach (screen; screens)
+			if (auto win = traverseScreen(screen, x, y))
+				return win;
+		return null;
 	}
 
 	@property xcb_connection_t* Connection() {
@@ -207,8 +263,8 @@ public:
 		return rootScreen;
 	}
 
-	@property Cursor[] Cursors() {
-		return cursors;
+	@property XCBMouse Mouse() {
+		return mouse;
 	}
 
 	@property BindManager BindMgr() {
@@ -271,14 +327,6 @@ public:
 		return onRequestStackModeWindow;
 	}
 
-	@property ref auto OnMousePress() {
-		return onMousePress;
-	}
-
-	@property ref auto OnMouseRelease() {
-		return onMouseRelease;
-	}
-
 	@property ref auto OnMouseMotion() {
 		return onMouseMotion;
 	}
@@ -296,11 +344,6 @@ private:
 	struct AtomName {
 		ulong id;
 		string name;
-	}
-
-	struct CursorType {
-		ulong id;
-		CursorIcons cursor;
 	}
 
 	//dfmt off
@@ -321,12 +364,6 @@ private:
 		WMWindowTypeDialog = AtomName(6, "_NET_WM_WINDOW_TYPE_DIALOG"),
 		ClientList = AtomName(7, "_NET_CLIENT_LIST")
 	}
-
-	enum Pointers : CursorType {
-		Normal = CursorType(0, CursorIcons.XC_left_ptr),
-		Resizing = CursorType(1, CursorIcons.XC_sizing),
-		Moving = CursorType(2, CursorIcons.XC_fleur)
-	}
 	//dfmt on
 
 	Log log;
@@ -336,10 +373,10 @@ private:
 	xcb_key_symbols_t* symbols;
 	xcb_ewmh_connection_t ewmhConnection;
 	XCBWindow root;
+	XCBMouse mouse;
 
 	Atom[EnumCount!(WMAtoms)()] lookupWMAtoms;
 	Atom[EnumCount!(NETAtoms)()] lookupNETAtoms;
-	Cursor[EnumCount!(Pointers)()] cursors;
 
 	BindManager bindMgr;
 	XCBWindow[] windows;
@@ -355,8 +392,6 @@ private:
 	Event!(Window, Window) onRequestSiblingWindow;
 	Event!(Window, ubyte) onRequestStackModeWindow;
 
-	Event!(Window, short, short) onMousePress;
-	Event!(Window, short, short) onMouseRelease;
 	Event!(short, short) onMouseMotion;
 
 	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
@@ -386,18 +421,13 @@ private:
 		foreach (netAtom; EnumMembers!NETAtoms)
 			lookupNETAtoms[netAtom.id] = Atom(this, netAtom.name);
 
-		foreach (cursor; EnumMembers!Pointers)
-			cursors[cursor.id] = new Cursor(this, cursor.cursor);
-
-		cursors[Pointers.Normal.id].Apply();
-
 		lookupNETAtoms[NETAtoms.Supported.id].Change(root, lookupNETAtoms);
 
 		lookupNETAtoms[NETAtoms.ClientList.id].Delete(root);
 
 		if (xcb_xinerama_is_active_reply(connection, xcb_xinerama_is_active(connection), null).state) {
 			xcb_xinerama_query_screens_reply_t* reply = xcb_xinerama_query_screens_reply(connection,
-				xcb_xinerama_query_screens(connection), null);
+					xcb_xinerama_query_screens(connection), null);
 
 			auto it = xcb_xinerama_query_screens_screen_info_iterator(reply);
 			for (; it.rem > 0; xcb_xinerama_screen_info_next(&it))
@@ -426,7 +456,7 @@ private:
 
 		//dfmt on
 		xcb_generic_error_t* error = xcb_request_check(connection, xcb_change_window_attributes_checked(connection,
-			root.InternalWindow, XCB_CW_EVENT_MASK, &values));
+				root.InternalWindow, XCB_CW_EVENT_MASK, &values));
 		if (error) {
 			//dfmt off
 			log.Fatal(

@@ -70,6 +70,11 @@ public:
 		xcb_configure_window(xcb.Connection, window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
 	}
 
+	override void Focus() {
+		uint value = XCB_STACK_MODE_ABOVE;
+		xcb_configure_window(xcb.Connection, window, XCB_CONFIG_WINDOW_STACK_MODE, &value);
+	}
+
 	override void Show() {
 		visible = true;
 		Map();
