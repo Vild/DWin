@@ -84,6 +84,33 @@ public:
 		xcb_configure_window(xcb.Connection, window, XCB_CONFIG_WINDOW_STACK_MODE, &value);
 	}
 
+	override void Close() {
+		xcb_icccm_get_wm_protocols_reply_t reply;
+		auto Protocols = xcb.LookupWMAtoms[XCB.WMAtoms.Protocols.id];
+		auto DeleteWindow = xcb.LookupWMAtoms[XCB.WMAtoms.DeleteWindow.id];
+
+		if (!xcb_icccm_get_wm_protocols_reply(xcb.Connection, xcb_icccm_get_wm_protocols(xcb.Connection, window,
+				Protocols), &reply, null))
+			xcb_kill_client(xcb.Connection, window);
+
+		scope (exit)
+			xcb_icccm_get_wm_protocols_reply_wipe(&reply);
+
+		foreach (atom; reply.atoms[0 .. reply.atoms_len])
+			if (atom == DeleteWindow) {
+				xcb_client_message_event_t e;
+				e.response_type = XCB_CLIENT_MESSAGE;
+				e.window = window;
+				e.format = 32;
+				e.sequence = 0;
+				e.type = Protocols;
+				e.data.data32[0] = DeleteWindow;
+				e.data.data32[1] = XCB_CURRENT_TIME;
+				xcb_send_event(xcb.Connection, 0, window, XCB_EVENT_MASK_NO_EVENT, cast(char*)&e);
+				return;
+			}
+	}
+
 	override void Show() {
 		visible = true;
 		Map();

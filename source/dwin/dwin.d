@@ -165,6 +165,15 @@ private:
 				window = null;
 			}
 		});
+
+		xcb.BindMgr.Map("Ctrl + Shift + Escape", delegate(bool v) {
+			if (v) {
+				auto m = xcb.Mouse;
+				m.Update();
+				Window window = xcb.FindWindow(m.X, m.Y);
+				window.Close();
+			}
+		});
 	}
 
 	void print(Screen screen, int indent) {

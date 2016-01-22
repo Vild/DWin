@@ -23,6 +23,7 @@ public:
 	abstract void Show();
 	abstract void Hide();
 	//abstract void Focus();
+	abstract void Close();
 
 	@property abstract string Title();
 }
