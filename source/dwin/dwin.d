@@ -16,9 +16,9 @@ import std.container.array;
 
 final class DWin {
 public:
-	this() {
+	this(int display) {
 		log = Log.MainLogger();
-		xcb = new XCB();
+		xcb = new XCB(display);
 
 		setup();
 		sigchld(0); // Ignore when children dies

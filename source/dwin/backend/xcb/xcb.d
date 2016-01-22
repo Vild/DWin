@@ -21,12 +21,13 @@ import std.traits;
 import std.algorithm.searching;
 import std.algorithm.mutation;
 public import std.c.stdlib : xcb_free = free;
+import std.conv;
 
 class XCB {
 public:
-	this() {
+	this(int display) {
 		log = Log.MainLogger;
-		connection = xcb_connect(":8", &defaultScreen);
+		connection = xcb_connect((":" ~ to!string(display)).toStringz, &defaultScreen);
 		conError err = cast(conError)xcb_connection_has_error(connection);
 		if (err)
 			log.Fatal("Error while connecting to X11, %s", err);
