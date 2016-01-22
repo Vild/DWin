@@ -192,6 +192,7 @@ public:
 			break;
 		}
 		Flush();
+		xcb_free(cast(void*)e);
 	}
 
 	void Flush() {
