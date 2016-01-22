@@ -52,8 +52,7 @@ public:
 				&ewmh_txt_prop, null)) {
 			title = ewmh_txt_prop.strings.fromStringz.idup;
 			xcb_ewmh_get_utf8_strings_reply_wipe(&ewmh_txt_prop);
-		} else if (xcb_icccm_get_wm_name_reply(xcb.Connection, xcb_icccm_get_wm_name(xcb.Connection, window), &icccm_txt_prop,
-				null)) {
+		} else if (xcb_icccm_get_wm_name_reply(xcb.Connection, xcb_icccm_get_wm_name(xcb.Connection, window), &icccm_txt_prop, null)) {
 			title = icccm_txt_prop.name.fromStringz.idup;
 			xcb_icccm_get_text_property_reply_wipe(&icccm_txt_prop);
 		} else

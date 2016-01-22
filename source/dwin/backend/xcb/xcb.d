@@ -206,8 +206,6 @@ public:
 
 		Window traverseWin(Window window, short x, short y) {
 			window.Update();
-			log.Debug("%s >= %s && %s <= %s && %s >= %s && %s <= %s", x, window.X, x, window.X + window.Width, y,
-					window.Y, y, window.Y + window.Height);
 			if (x >= window.X && x <= window.X + window.Width && y >= window.Y && y <= window.Y + window.Height)
 				return window;
 			else
@@ -434,7 +432,7 @@ private:
 			auto it = xcb_xinerama_query_screens_screen_info_iterator(reply);
 			for (; it.rem > 0; xcb_xinerama_screen_info_next(&it))
 				screens ~= new Screen(format("Screen %d", reply.number - it.rem), it.data.x_org, it.data.y_org,
-					it.data.width, it.data.height);
+						it.data.width, it.data.height);
 
 			xcb_free(reply);
 		} else {
@@ -451,11 +449,8 @@ private:
 			XCB_EVENT_MASK_STRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
 			XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, CreateNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
 			XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | // CirculateRequest, ConfigureRequest, MapRequest
-			XCB_EVENT_MASK_PROPERTY_CHANGE | // PropertyNotify
-			XCB_EVENT_MASK_BUTTON_PRESS | // KeyPress
-			XCB_EVENT_MASK_BUTTON_RELEASE | // KeyRelease
-			XCB_EVENT_MASK_POINTER_MOTION; // MotionNotify
-
+			XCB_EVENT_MASK_PROPERTY_CHANGE // PropertyNotify
+			;
 		//dfmt on
 		xcb_generic_error_t* error = xcb_request_check(connection, xcb_change_window_attributes_checked(connection,
 				root.InternalWindow, XCB_CW_EVENT_MASK, &values));

@@ -50,17 +50,16 @@ public:
 				if (!code)
 					continue;
 
-				Log.MainLogger.Debug("Mapping-Key: %s", keyBind);
 				foreach (mod; modifiers)
 					grabKey(true, cast(Modifier)(keyBind.modifier | mod), *code, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 
 				xcb_free(code);
 			} else {
-				Log.MainLogger.Debug("Mapping-Mouse: %s", keyBind);
 				foreach (mod; modifiers)
 					grabButton(true,
-						XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
-						XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, keyBind.mouseButton, cast(Modifier)(keyBind.modifier | mod));
+							XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
+							XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, keyBind.mouseButton,
+							cast(Modifier)(keyBind.modifier | mod));
 			}
 		}
 		xcb.Flush();
@@ -92,7 +91,7 @@ public:
 			return;
 		}
 
-		Log.MainLogger.Debug("Mapping: %s", keyBind);
+		Log.MainLogger.Debug("Mapping '%s' to func@0x%x", keyBind, func.funcptr);
 		mappings[keyBind] = func;
 		Rebind();
 	}
@@ -209,4 +208,5 @@ private:
 	auto ungrabButton(MouseButton button, Modifier modifiers) {
 		return xcb_ungrab_button(xcb.Connection, button, xcb.Root.InternalWindow, modifiers);
 	}
+
 }

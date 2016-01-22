@@ -140,7 +140,6 @@ private:
 			auto m = xcb.Mouse;
 			if (v) {
 				window = xcb.FindWindow(m.X, m.Y);
-				log.Warning("Window: %s, Mouse: %s", window, m);
 				if (window)
 					if (Layout parent = window.Parent)
 						parent.MouseMovePressed(window, m);
@@ -156,7 +155,6 @@ private:
 			auto m = xcb.Mouse;
 			if (v) {
 				window = xcb.FindWindow(m.X, m.Y);
-				log.Warning("Window: %s, Mouse: %s", window, m);
 				if (window)
 					if (Layout parent = window.Parent)
 						parent.MouseResizePressed(window, m);
