@@ -85,7 +85,7 @@ public:
 
 		case XCB_MOTION_NOTIFY:
 			auto notify = cast(xcb_motion_notify_event_t*)e;
-			onMouseMotion(notify.root_x, notify.root_y);
+			onMouseMotion(notify.root_x, notify.root_y, notify.time);
 			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, notify.time);
 			break;
 
@@ -394,7 +394,7 @@ private:
 	Event!(Window, Window) onRequestSiblingWindow;
 	Event!(Window, ubyte) onRequestStackModeWindow;
 
-	Event!(short, short) onMouseMotion;
+	Event!(short, short, uint) onMouseMotion;
 
 	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
 		foreach (i, window; windows)

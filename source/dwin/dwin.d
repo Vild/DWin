@@ -36,6 +36,8 @@ private:
 	XCB xcb;
 	Window window;
 
+	uint lastMove;
+
 	extern (C) static void sigchld(int) nothrow @nogc {
 		import core.sys.posix.signal : signal, SIGCHLD, SIG_ERR;
 		import core.sys.posix.sys.wait : waitpid, WNOHANG;
@@ -90,9 +92,13 @@ private:
 		//TODO: implement?
 	}
 
-	void onMouseMotion(short x, short y) {
+	void onMouseMotion(short x, short y, uint timestamp) {
+		timestamp /= 8; //TODO: Extract this to be a config flag
 		auto m = xcb.Mouse;
 		m.Set(x, y);
+		if (timestamp == lastMove)
+			return;
+		lastMove = timestamp;
 		if (window)
 			if (Layout parent = window.Parent)
 				parent.MouseMotion(window, m);
