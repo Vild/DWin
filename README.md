@@ -1,26 +1,38 @@
 # DWin - *D always win*
 
+**PLEASE NOTE THAT DWIN IS IN A PRE-ALPHA STATE. NOT READY FOR PRODUCTION USE!**
 
 ## Description
 DWin is a tiling window manager written in the lovely language called [D](//dlang.org).
 
 It currently uses X11 as it's backend but will also be ported to wayland in the future.
 
-##Basic usage
-
-To start DWin, type this in a tty :
+##Usage
 
 ```
-startx /path/to/dwin/executable
+DWin is a tiled based window manager written in the lovely language called D
+-d   --display The display to run it on
+-n --no-xephyr Run it native, without Xephyr
+-h      --help This help information.
 ```
 
-You can then :
+To start DWin natively make a ~/.xinitrc file with the following content
 
-- Spawn a xterm : ctrl + enter
-- Start xeyes : ctrl + backspace
-- Move a window : ctrl + Mouse1
-- Resize a window : ctrl + Mouse3
-- Print window hierarchy : ctrl + F5
+```
+dwin -d 0 -n
+```
+
+And then run `startx`
+
+You can then:
+
+- Spawn xterm: Ctrl + Enter
+- Spawn xeyes: Ctrl + Backspace
+- Move a window: Ctrl + Mouse1
+- Resize a window: Ctrl + Mouse3
+- Close a window: Ctrl + Shift + Escape
+- Print window hierarchy: Ctrl + F5
+- Kill DWin: Escape
 
 ## Authors
 Dan "Wild" Printzell

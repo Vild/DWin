@@ -9,7 +9,8 @@ int main(string[] args) {
 	int display = 8;
 	bool noXephyr = false;
 
-	auto result = getopt(args, "d|display", "The display to run it on", &display, "o|noXephyr", "noXephyr", &noXephyr);
+	auto result = getopt(args, "d|display", "The display to run it on", &display, "n|no-xephyr",
+			"Run it native, without Xephyr", &noXephyr);
 
 	if (result.helpWanted) {
 		defaultGetoptPrinter("DWin is a tiled based window manager written in the lovely language called D", result.options);
