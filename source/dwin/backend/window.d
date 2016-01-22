@@ -19,6 +19,7 @@ public:
 	//abstract void Update();
 	//abstract void Move(short x, short y);
 	//abstract void Resize(ushort width, ushort height);
+	//abstract void MoveResize(short x, short y, ushort width, ushort height);
 	abstract void Show();
 	abstract void Hide();
 	//abstract void Focus();

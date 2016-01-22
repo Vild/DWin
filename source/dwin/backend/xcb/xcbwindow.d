@@ -61,13 +61,23 @@ public:
 	}
 
 	override void Move(short x, short y) {
+		this.x = x;
+		this.y = y;
 		uint[] data = [x, y];
 		xcb_configure_window(xcb.Connection, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, data.ptr);
 	}
 
 	override void Resize(ushort width, ushort height) {
+		this.width = width;
+		this.height = height;
 		uint[] data = [width, height];
 		xcb_configure_window(xcb.Connection, window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
+	}
+
+	override void MoveResize(short x, short y, ushort width, ushort height) {
+		uint[] data = [x, y, width, height];
+		xcb_configure_window(xcb.Connection, window,
+				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
 	}
 
 	override void Focus() {

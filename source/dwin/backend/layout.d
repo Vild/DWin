@@ -43,6 +43,13 @@ public:
 		this.height = height;
 	}
 
+	override void MoveResize(short x, short y, ushort width, ushort height) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+	}
+
 	override void Focus() {
 	}
 

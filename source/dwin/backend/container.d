@@ -9,6 +9,7 @@ public:
 	abstract void Remove(Container container);
 	abstract void Move(short x, short y);
 	abstract void Resize(ushort width, ushort height);
+	abstract void MoveResize(short x, short y, ushort width, ushort height);
 
 	abstract void Update();
 	abstract void Focus();
@@ -26,7 +27,6 @@ public:
 	}
 
 	@property short X(short x) {
-		this.x = x;
 		Move(x, y);
 		return this.x;
 	}
@@ -36,7 +36,6 @@ public:
 	}
 
 	@property short Y(short y) {
-		this.y = y;
 		Move(x, y);
 		return this.y;
 	}
@@ -46,7 +45,6 @@ public:
 	}
 
 	@property ushort Width(ushort width) {
-		this.width = width;
 		Resize(width, height);
 		return this.width;
 	}
@@ -56,7 +54,6 @@ public:
 	}
 
 	@property ushort Height(ushort height) {
-		this.height = height;
 		Resize(width, height);
 		return this.height;
 	}

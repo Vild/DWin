@@ -26,6 +26,10 @@ public:
 		super.Resize(width, height);
 	}
 
+	override void MoveResize(short x, short y, ushort width, ushort height) {
+		super.MoveResize(x, y, width, height);
+	}
+
 	override void MouseMovePressed(Container target, Mouse mouse) {
 		if (state != HandlingState.None)
 			return;
