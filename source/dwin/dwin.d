@@ -62,11 +62,15 @@ private:
 	void onRequestShowWindow(Window window) {
 		log.Info("Show: %s", window);
 		window.Show();
+		if (Layout parent = window.Parent)
+			parent.ContainerShow(window);
 	}
 
 	void onRequestHideWindow(Window window) {
 		log.Info("Hide: %s", window);
 		window.Hide();
+		if (Layout parent = window.Parent)
+			parent.ContainerHide(window);
 	}
 
 	void onRequestMoveWindow(Window window, short x, short y) {

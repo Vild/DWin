@@ -25,6 +25,31 @@ import std.conv;
 
 class XCB {
 public:
+	struct AtomName {
+		ulong id;
+		string name;
+	}
+
+	//dfmt off
+	enum WMAtoms : AtomName {
+		Protocols = AtomName(0, "WM_PROTOCOLS"),
+		DeleteWindow = AtomName(1, "WM_DELETE_WINDOW"),
+		State = AtomName(2, "WM_STATE"),
+		TakeFocus = AtomName(3, "WM_TAKE_FOCUS")
+	}
+
+	enum NETAtoms : AtomName {
+		Supported = AtomName(0, "_NET_SUPPORTED"),
+		WMName = AtomName(1, "_NET_WM_NAME"),
+		WMState = AtomName(2, "_NET_WM_STATE"),
+		WMFullscreen = AtomName(3, "_NET_WM_STATE_FULLSCREEN"),
+		ActiveWindow = AtomName(4, "_NET_ACTIVE_WINDOW"),
+		WMWindowType = AtomName(5, "_NET_WM_WINDOW_TYPE"),
+		WMWindowTypeDialog = AtomName(6, "_NET_WM_WINDOW_TYPE_DIALOG"),
+		ClientList = AtomName(7, "_NET_CLIENT_LIST")
+	}
+	//dfmt on
+
 	this(int display) {
 		log = Log.MainLogger;
 		connection = xcb_connect((":" ~ to!string(display)).toStringz, &defaultScreen);
@@ -267,6 +292,14 @@ public:
 		return mouse;
 	}
 
+	@property Atom[] LookupWMAtoms() {
+		return lookupWMAtoms;
+	}
+
+	@property Atom[] LookupNETAtoms() {
+		return lookupNETAtoms;
+	}
+
 	@property BindManager BindMgr() {
 		return bindMgr;
 	}
@@ -340,31 +373,6 @@ private:
 		ClosedParseErr,
 		ClosedInvalidScreen
 	}
-
-	struct AtomName {
-		ulong id;
-		string name;
-	}
-
-	//dfmt off
-	enum WMAtoms : AtomName {
-		Protocols = AtomName(0, "WM_PROTOCOLS"),
-		Delete = AtomName(1, "WM_DELETE_WINDOW"),
-		State = AtomName(2, "WM_STATE"),
-		TakeFocus = AtomName(3, "WM_TAKE_FOCUS")
-	}
-
-	enum NETAtoms : AtomName {
-		Supported = AtomName(0, "_NET_SUPPORTED"),
-		WMName = AtomName(1, "_NET_WM_NAME"),
-		WMState = AtomName(2, "_NET_WM_STATE"),
-		WMFullscreen = AtomName(3, "_NET_WM_STATE_FULLSCREEN"),
-		ActiveWindow = AtomName(4, "_NET_ACTIVE_WINDOW"),
-		WMWindowType = AtomName(5, "_NET_WM_WINDOW_TYPE"),
-		WMWindowTypeDialog = AtomName(6, "_NET_WM_WINDOW_TYPE_DIALOG"),
-		ClientList = AtomName(7, "_NET_CLIENT_LIST")
-	}
-	//dfmt on
 
 	Log log;
 	xcb_connection_t* connection;

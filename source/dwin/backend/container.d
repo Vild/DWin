@@ -58,6 +58,8 @@ public:
 		return this.height;
 	}
 
+	@property abstract bool IsVisible();
+
 protected:
 	Layout parent;
 	bool dead;

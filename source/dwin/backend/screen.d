@@ -15,7 +15,10 @@ public:
 		this.width = width;
 		this.height = height;
 		onTop = new FloatingLayout();
+		onTop.MoveResize(x, y, width, height);
 		this.workspaces = workspaces;
+		foreach (workspace; this.workspaces)
+			workspace.MoveResize(x, y, width, height);
 	}
 
 	void Add(Container container) {

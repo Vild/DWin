@@ -29,6 +29,8 @@ public:
 	abstract void MouseMoveReleased(Container target, Mouse mouse);
 	abstract void MouseResizePressed(Container target, Mouse mouse);
 	abstract void MouseMotion(Container target, Mouse mouse);
+	abstract void ContainerShow(Container container);
+	abstract void ContainerHide(Container container);
 
 	override void Update() {
 	}
@@ -55,6 +57,10 @@ public:
 
 	@property Array!Container Containers() {
 		return containers;
+	}
+
+	@property override bool IsVisible() {
+		return true;
 	}
 
 protected:

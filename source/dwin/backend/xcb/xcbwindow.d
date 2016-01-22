@@ -29,6 +29,10 @@ public:
 		return title;
 	}
 
+	@property override bool IsVisible() {
+		return visible;
+	}
+
 	override void Update() {
 		import std.string : fromStringz;
 

@@ -26,4 +26,5 @@ public:
 	abstract void Close();
 
 	@property abstract string Title();
+	//@property abstract bool IsVisible();
 }

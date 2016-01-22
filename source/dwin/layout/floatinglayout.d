@@ -7,8 +7,6 @@ import dwin.log;
 import dwin.util.data;
 import std.math;
 
-import dwin.backend.xcb.key; //XXX: Extract MouseButton from xcb package
-
 class FloatingLayout : Layout {
 public:
 	override void Add(Container container) {
@@ -17,6 +15,12 @@ public:
 
 	override void Remove(Container container) {
 		super.Remove(container);
+	}
+
+	override void ContainerShow(Container container) {
+	}
+
+	override void ContainerHide(Container container) {
 	}
 
 	override void Move(short x, short y) {

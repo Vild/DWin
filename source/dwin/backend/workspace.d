@@ -3,13 +3,14 @@ module dwin.backend.workspace;
 import dwin.backend.container;
 import dwin.backend.layout;
 import dwin.layout.floatinglayout;
+import dwin.layout.tilinglayout;
 
 class Workspace {
 public:
 	this(string name) {
 		this.name = name;
 		onTop = new FloatingLayout();
-		root = new FloatingLayout();
+		root = new TilingLayout();
 	}
 
 	void Add(Container container) {
@@ -38,6 +39,21 @@ public:
 
 	@property FloatingLayout OnTop() {
 		return onTop;
+	}
+
+	void Move(short x, short y) {
+		onTop.Move(x, y);
+		root.Move(x, y);
+	}
+
+	void Resize(ushort width, ushort height) {
+		onTop.Resize(width, height);
+		root.Resize(width, height);
+	}
+
+	void MoveResize(short x, short y, ushort width, ushort height) {
+		onTop.MoveResize(x, y, width, height);
+		root.MoveResize(x, y, width, height);
 	}
 
 protected:
