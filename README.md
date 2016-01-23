@@ -31,6 +31,10 @@ You can then:
 - Move a window: Ctrl + Mouse1
 - Resize a window: Ctrl + Mouse3
 - Close a window: Ctrl + Shift + Escape
+- Move to a workspace on the left: Ctrl + 1
+- Move to a workspace on the right: Ctrl + 2
+- Promote window to OnTop: Ctrl + P
+- Promote window to OnTop: Ctrl + O
 - Print window hierarchy: Ctrl + F5
 - Kill DWin: Escape
 
