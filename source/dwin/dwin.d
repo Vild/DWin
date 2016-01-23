@@ -193,6 +193,34 @@ private:
 				scr.CurrentWorkspace(scr.CurrentWorkspace + 1);
 			}
 		});
+
+		xcb.BindMgr.Map("Ctrl + p", delegate(bool v) {
+			if (v) {
+				auto m = xcb.Mouse;
+				m.Update();
+				Window window = xcb.FindWindow(m.X, m.Y);
+				if (!window)
+					return;
+				log.Info("Promoting: %s", window.Title);
+				window.Parent.Remove(window);
+				auto scr = xcb.Screens[0];
+				scr.Workspaces[scr.CurrentWorkspace].AddOnTop(window);
+			}
+		});
+
+		xcb.BindMgr.Map("Ctrl + o", delegate(bool v) {
+			if (v) {
+				auto m = xcb.Mouse;
+				m.Update();
+				Window window = xcb.FindWindow(m.X, m.Y);
+				if (!window)
+					return;
+				log.Info("Demoting: %s", window.Title);
+				window.Parent.Remove(window);
+				auto scr = xcb.Screens[0];
+				scr.Workspaces[scr.CurrentWorkspace].Add(window);
+			}
+		});
 	}
 
 	void print(Screen screen, int indent) {
