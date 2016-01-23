@@ -148,11 +148,12 @@ public:
 
 			ulong idx;
 			auto window = findWindow(notify.window, &idx);
+			if (!window)
+				break;
 			window.Dead = true;
 			onRemoveWindow(window);
 			window.destroy;
 			windows = windows.remove(idx);
-
 			break;
 
 		case XCB_MAP_NOTIFY: // Skip check of this because every time we call xcb_map_window, it will trigger this event
@@ -172,7 +173,7 @@ public:
 			auto unmap = cast(xcb_unmap_notify_event_t*)e;
 			auto window = findWindow(unmap.window);
 			if (window)
-				onRequestHideWindow(window);
+				onNotifyHideWindow(window);
 			break;
 
 		case XCB_CONFIGURE_NOTIFY:
@@ -238,6 +239,8 @@ public:
 		}
 
 		Window traverseCon(Container con, short x, short y) {
+			if (!con.IsVisible)
+				return null;
 			if (auto window = cast(Window)con) {
 				if (auto win = traverseWin(window, x, y))
 					return win;
@@ -249,12 +252,16 @@ public:
 		}
 
 		Window traverseWorkspace(Workspace workspace, short x, short y) {
+			if (auto win = traverseCon(workspace.OnTop, x, y))
+				return win;
 			if (auto win = traverseCon(workspace.Root, x, y))
 				return win;
 			return null;
 		}
 
 		Window traverseLayout(Layout layout, short x, short y) {
+			if (!layout.IsVisible)
+				return null;
 			foreach (container; layout.Containers)
 				if (auto win = traverseCon(container, x, y))
 					return win;
@@ -336,8 +343,8 @@ public:
 		return onRequestShowWindow;
 	}
 
-	@property ref auto OnRequestHideWindow() {
-		return onRequestHideWindow;
+	@property ref auto OnNotifyHideWindow() {
+		return onNotifyHideWindow;
 	}
 
 	@property ref auto OnRequestMoveWindow() {
@@ -393,7 +400,7 @@ private:
 	Event!(Window) onNewWindow;
 	Event!(Window) onRemoveWindow;
 	Event!(Window) onRequestShowWindow;
-	Event!(Window) onRequestHideWindow;
+	Event!(Window) onNotifyHideWindow;
 	Event!(Window, short, short) onRequestMoveWindow;
 	Event!(Window, ushort, ushort) onRequestResizeWindow;
 	Event!(Window, ushort) onRequestBorderSizeWindow;

@@ -29,6 +29,16 @@ public:
 		onTop.Remove(container);
 	}
 
+	void Show(bool eventBased = true) {
+		onTop.Show(eventBased);
+		root.Show(eventBased);
+	}
+
+	void Hide(bool eventBased = true) {
+		onTop.Hide(eventBased);
+		root.Hide(eventBased);
+	}
+
 	@property ref string Name() {
 		return name;
 	}

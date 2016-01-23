@@ -17,10 +17,12 @@ public:
 		super.Remove(container);
 	}
 
-	override void ContainerShow(Container container) {
+	override void RequestShow(Container container) {
+		container.Show();
 	}
 
-	override void ContainerHide(Container container) {
+	override void NotifyHide(Container container) {
+		container.Hide();
 	}
 
 	override void Move(short x, short y) {

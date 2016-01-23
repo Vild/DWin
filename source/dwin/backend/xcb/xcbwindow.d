@@ -115,13 +115,22 @@ public:
 			}
 	}
 
-	override void Show() {
-		visible = true;
-		Map();
+	override void Show(bool eventBased = true) {
+		if (eventBased)
+			visible = true;
+
+		if (visible && parent.IsVisible)
+			Map();
 	}
 
-	override void Hide() {
-		visible = false;
+	override void Hide(bool eventBased = true) {
+		static bool lastWasEvent = true;
+
+		if (lastWasEvent && eventBased)
+			visible = false;
+
+		lastWasEvent = eventBased;
+
 		Unmap();
 	}
 

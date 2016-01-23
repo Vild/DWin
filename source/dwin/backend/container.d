@@ -11,6 +11,9 @@ public:
 	abstract void Resize(ushort width, ushort height);
 	abstract void MoveResize(short x, short y, ushort width, ushort height);
 
+	abstract void Show(bool eventBased = true);
+	abstract void Hide(bool eventBased = true);
+
 	abstract void Update();
 	abstract void Focus();
 

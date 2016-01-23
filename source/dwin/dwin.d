@@ -61,16 +61,14 @@ private:
 
 	void onRequestShowWindow(Window window) {
 		log.Info("Show: %s", window);
-		window.Show();
 		if (Layout parent = window.Parent)
-			parent.ContainerShow(window);
+			parent.RequestShow(window);
 	}
 
-	void onRequestHideWindow(Window window) {
+	void onNotifyHideWindow(Window window) {
 		log.Info("Hide: %s", window);
-		window.Hide();
 		if (Layout parent = window.Parent)
-			parent.ContainerHide(window);
+			parent.NotifyHide(window);
 	}
 
 	void onRequestMoveWindow(Window window, short x, short y) {
@@ -112,7 +110,7 @@ private:
 		xcb.OnNewWindow ~= &onNewWindow;
 		xcb.OnRemoveWindow ~= &onRemoveWindow;
 		xcb.OnRequestShowWindow ~= &onRequestShowWindow;
-		xcb.OnRequestHideWindow ~= &onRequestHideWindow;
+		xcb.OnNotifyHideWindow ~= &onNotifyHideWindow;
 		xcb.OnRequestMoveWindow ~= &onRequestMoveWindow;
 		xcb.OnRequestResizeWindow ~= &onRequestResizeWindow;
 		xcb.OnRequestBorderSizeWindow ~= &onRequestBorderSizeWindow;
@@ -175,7 +173,24 @@ private:
 				auto m = xcb.Mouse;
 				m.Update();
 				Window window = xcb.FindWindow(m.X, m.Y);
+				if (!window)
+					return;
+				window.Hide();
 				window.Close();
+			}
+		});
+
+		xcb.BindMgr.Map("Ctrl + 1", delegate(bool v) {
+			if (v) {
+				auto scr = xcb.Screens[0];
+				scr.CurrentWorkspace(scr.CurrentWorkspace - 1);
+			}
+		});
+
+		xcb.BindMgr.Map("Ctrl + 2", delegate(bool v) {
+			if (v) {
+				auto scr = xcb.Screens[0];
+				scr.CurrentWorkspace(scr.CurrentWorkspace + 1);
 			}
 		});
 	}
@@ -204,12 +219,13 @@ private:
 
 	void print(Layout layout, int indent) {
 		writefln("%*s* Type: %s", indent * 2, " ", typeid(layout));
+		writefln("%*s* Visible: %s", indent * 2, " ", layout.IsVisible);
 		foreach (container; layout.Containers)
 			print(container, indent + 1);
 	}
 
 	void print(Window window, int indent) {
-		writefln("%*sWindow: %s", indent * 2, " ", window.Title);
+		writefln("%*sWindow: %s Visible: %s", indent * 2, " ", window.Title, window.IsVisible);
 	}
 
 	void printHierarchy() {

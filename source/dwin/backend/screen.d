@@ -8,7 +8,8 @@ import dwin.layout.floatinglayout;
 
 class Screen {
 public:
-	this(string name, short x, short y, ushort width, ushort height, Workspace[] workspaces = [new Workspace("Default")]) {
+	this(string name, short x, short y, ushort width, ushort height, Workspace[] workspaces = [new Workspace("Workspace1"),
+			new Workspace("Workspace2"), new Workspace("Workspace3")]) {
 		this.name = name;
 		this.x = x;
 		this.y = y;
@@ -19,6 +20,8 @@ public:
 		this.workspaces = workspaces;
 		foreach (workspace; this.workspaces)
 			workspace.MoveResize(x, y, width, height);
+
+		workspaces[this.currentWorkspace].Show();
 	}
 
 	void Add(Container container) {
@@ -57,8 +60,24 @@ public:
 		return height;
 	}
 
-	@property ulong CurrentWorkspace() {
+	@property long CurrentWorkspace() {
 		return currentWorkspace;
+	}
+
+	@property long CurrentWorkspace(long currentWorkspace) {
+		long mod(long a, long b) {
+			import std.math : abs;
+
+			return (a >= 0) ? a % b : (b - abs(a % b)) % b;
+		}
+
+		currentWorkspace = mod(currentWorkspace, workspaces.length);
+
+		workspaces[this.currentWorkspace].Hide(false);
+		this.currentWorkspace = currentWorkspace;
+
+		workspaces[this.currentWorkspace].Show(false);
+		return this.currentWorkspace;
 	}
 
 	@property ref Workspace[] Workspaces() {
@@ -76,7 +95,7 @@ protected:
 	ushort width;
 	ushort height;
 
-	ulong currentWorkspace;
+	long currentWorkspace;
 
 	Workspace[] workspaces;
 	FloatingLayout onTop;

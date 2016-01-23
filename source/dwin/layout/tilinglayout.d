@@ -19,18 +19,34 @@ class TilingLayout : Layout {
 
 	override void Add(Container container) {
 		super.Add(container);
+		rebalance();
 	}
 
 	override void Remove(Container container) {
 		super.Remove(container);
-	}
-
-	override void ContainerShow(Container container) {
 		rebalance();
 	}
 
-	override void ContainerHide(Container container) {
+	override void RequestShow(Container container) {
+		container.Show();
 		rebalance();
+	}
+
+	override void NotifyHide(Container container) {
+		if (IsVisible)
+			container.Hide();
+		rebalance();
+	}
+
+	override void Show(bool eventBased = true) {
+		super.Show(eventBased);
+		balanceLock = false;
+		rebalance();
+	}
+
+	override void Hide(bool eventBased = true) {
+		balanceLock = true;
+		super.Hide(eventBased);
 	}
 
 	override void Move(short x, short y) {
@@ -103,7 +119,12 @@ private:
 	HandlingState state;
 	Container target;
 
+	bool balanceLock;
+
 	void rebalance() {
+		if (balanceLock)
+			return;
+
 		ulong len;
 
 		foreach (con; containers)

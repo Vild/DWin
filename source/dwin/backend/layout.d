@@ -13,6 +13,10 @@ enum LayoutType {
 
 abstract class Layout : Container {
 public:
+	this() {
+		visible = false;
+	}
+
 	override void Add(Container container) {
 		containers.insertBack(container);
 		container.Parent = this;
@@ -29,10 +33,22 @@ public:
 	abstract void MouseMoveReleased(Container target, Mouse mouse);
 	abstract void MouseResizePressed(Container target, Mouse mouse);
 	abstract void MouseMotion(Container target, Mouse mouse);
-	abstract void ContainerShow(Container container);
-	abstract void ContainerHide(Container container);
+	abstract void RequestShow(Container container);
+	abstract void NotifyHide(Container container);
 
 	override void Update() {
+	}
+
+	override void Show(bool eventBased = true) {
+		visible = true;
+		foreach (container; containers)
+			container.Show(eventBased);
+	}
+
+	override void Hide(bool eventBased = true) {
+		visible = false;
+		foreach (container; containers)
+			container.Hide(eventBased);
 	}
 
 	override void Move(short x, short y) {
@@ -60,9 +76,10 @@ public:
 	}
 
 	@property override bool IsVisible() {
-		return true;
+		return visible;
 	}
 
 protected:
 	Array!Container containers;
+	bool visible;
 }
