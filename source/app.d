@@ -54,25 +54,6 @@ int main(string[] args) {
 	scope (exit)
 		dwin.destroy;
 
-	Pid xeyes;
-	Pid xterm;
-
-	scope (exit)
-		kill(xeyes);
-	scope (exit)
-		kill(xterm);
-
-	auto spawnThread = new Thread(() {
-		Thread.sleep(1.seconds);
-		xeyes = spawnProcess("xeyes", childEnv);
-		xterm = spawnProcess("xterm", childEnv);
-
-		wait(xeyes);
-		wait(xterm);
-	});
-
-	spawnThread.start();
-
 	dwin.Run();
 
 	return 0;
