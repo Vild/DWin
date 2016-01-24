@@ -283,6 +283,15 @@ public:
 		return null;
 	}
 
+	Screen FindScreen(short x, short y) {
+		foreach (screen; screens) {
+			log.Info("Screen: %s\tX: %s, Y: %s", screen, x, y);
+			if (screen.X <= x && screen.X + screen.Width >= x && screen.Y <= y && screen.Y + screen.Height >= y)
+				return screen;
+		}
+		return screens[0];
+	}
+
 	@property xcb_connection_t* Connection() {
 		return connection;
 	}

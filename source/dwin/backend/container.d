@@ -2,6 +2,7 @@ module dwin.backend.container;
 
 import dwin.backend.layout;
 import dwin.backend.window;
+import dwin.backend.screen;
 
 abstract class Container {
 public:
@@ -16,6 +17,10 @@ public:
 
 	abstract void Update();
 	abstract void Focus();
+
+	@property ref.Screen Screen() {
+		return screen;
+	}
 
 	@property ref Layout Parent() {
 		return parent;
@@ -64,6 +69,7 @@ public:
 	@property abstract bool IsVisible();
 
 protected:
+	.Screen screen;
 	Layout parent;
 	bool dead;
 	short x;

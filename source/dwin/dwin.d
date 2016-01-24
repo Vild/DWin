@@ -50,7 +50,12 @@ private:
 	void onNewWindow(Window window) {
 		log.Info("New Window: %s", window);
 
-		xcb.Screens[0].Add(window);
+		auto m = xcb.Mouse;
+		m.Update();
+		auto scr = xcb.FindScreen(m.X, m.Y);
+		window.Screen = scr;
+		window.Move(scr.X, scr.Y);
+		scr.Add(window);
 	}
 
 	void onRemoveWindow(Window window) {
@@ -76,7 +81,7 @@ private:
 	}
 
 	void onRequestResizeWindow(Window window, ushort width, ushort height) {
-		Screen scr = xcb.Screens[0];
+		Screen scr = window.Screen;
 		width = (width < scr.Width) ? width : scr.Width;
 		height = (height < scr.Height) ? height : scr.Height;
 		window.Resize(width, height);
@@ -182,14 +187,18 @@ private:
 
 		xcb.BindMgr.Map("Ctrl + 1", delegate(bool v) {
 			if (v) {
-				auto scr = xcb.Screens[0];
+				auto m = xcb.Mouse;
+				m.Update();
+				auto scr = xcb.FindScreen(m.X, m.Y);
 				scr.CurrentWorkspace(scr.CurrentWorkspace - 1);
 			}
 		});
 
 		xcb.BindMgr.Map("Ctrl + 2", delegate(bool v) {
 			if (v) {
-				auto scr = xcb.Screens[0];
+				auto m = xcb.Mouse;
+				m.Update();
+				auto scr = xcb.FindScreen(m.X, m.Y);
 				scr.CurrentWorkspace(scr.CurrentWorkspace + 1);
 			}
 		});
@@ -203,7 +212,7 @@ private:
 					return;
 				log.Info("Promoting: %s", window.Title);
 				window.Parent.Remove(window);
-				auto scr = xcb.Screens[0];
+				auto scr = window.Screen;
 				scr.Workspaces[scr.CurrentWorkspace].AddOnTop(window);
 			}
 		});
@@ -217,7 +226,7 @@ private:
 					return;
 				log.Info("Demoting: %s", window.Title);
 				window.Parent.Remove(window);
-				auto scr = xcb.Screens[0];
+				auto scr = window.Screen;
 				scr.Workspaces[scr.CurrentWorkspace].Add(window);
 			}
 		});

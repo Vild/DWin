@@ -88,6 +88,12 @@ public:
 		return onTop;
 	}
 
+	override string toString() {
+		import std.format : format;
+
+		return format("Screen[Name: %s, X: %s, Y: %s, Width: %s, Height: %s]", name, x, y, width, height);
+	}
+
 protected:
 	string name;
 	short x;

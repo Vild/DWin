@@ -20,7 +20,7 @@ int main(string[] args) {
 	writeln("Display: ", display, " noXephyr: ", noXephyr);
 
 	string title = "DWin - D always win!";
-	string size = "1920x1080";
+	string size = "1280x720";
 
 	/*
 		This is hardcoded for now!
@@ -36,7 +36,8 @@ int main(string[] args) {
 	Pid Xephyr;
 	if (!noXephyr)
 		Xephyr = spawnProcess([`Xephyr`, `-keybd`, `ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=`,
-				`-name`, title, `-ac`, `-br`, `-noreset`, `-screen`, size, `:` ~ to!string(display)]);
+				`-name`, title, `-ac`, `-br`, `-noreset`, `+extension`, `RANDR`, `+xinerama`, `-screen`, size,
+				`:` ~ to!string(display), `-screen`, size, `:` ~ to!string(display)]);
 	scope (exit)
 		if (Xephyr)
 			kill(Xephyr);
