@@ -7,12 +7,12 @@ import xcb.xcb;
 import xcb.keysyms;
 import xcb.ewmh;
 import xcb.xinerama;
+import dwin.backend.engine;
 import dwin.backend.screen;
 import dwin.backend.window;
 import dwin.backend.xcb.atom;
-import dwin.backend.xcb.bindmanager;
+import dwin.backend.xcb.xcbbindmanager;
 import dwin.backend.xcb.event;
-import dwin.backend.xcb.key;
 import dwin.backend.xcb.xcbwindow;
 import dwin.backend.xcb.xcbmouse;
 import dwin.util.data;
@@ -23,7 +23,7 @@ import std.algorithm.mutation;
 public import std.c.stdlib : xcb_free = free;
 import std.conv;
 
-class XCB {
+class XCB : Engine {
 public:
 	struct AtomName {
 		ulong id;
@@ -67,7 +67,7 @@ public:
 		root = new XCBWindow(this, rootScreen.root);
 		mouse = new XCBMouse(this);
 
-		bindMgr = new BindManager(this);
+		bindManager = new XCBBindManager(this);
 
 		checkOtherWM();
 		setup();
@@ -78,7 +78,7 @@ public:
 		xcb_disconnect(connection);
 	}
 
-	void DoEvent() {
+	override void DoEvent() {
 		const xcb_generic_event_t* e = xcb_wait_for_event(connection);
 
 		XCBEvent ev = cast(XCBEvent)(e.response_type & ~0x80);
@@ -105,7 +105,7 @@ public:
 
 			xcb_refresh_keyboard_mapping(symbols, notify);
 			if (notify.request == XCB_MAPPING_NOTIFY)
-				bindMgr.Rebind();
+				BindManager.Rebind();
 			break;
 
 		case XCB_MOTION_NOTIFY:
@@ -117,23 +117,23 @@ public:
 		case XCB_BUTTON_PRESS:
 			xcb_button_press_event_t* press = cast(xcb_button_press_event_t*)e;
 			//auto window = findWindow(press.child);
-			bindMgr.HandleButtonPressEvent(press);
+			BindManager.HandleButtonPressEvent(press);
 			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, press.time);
 			break;
 
 		case XCB_BUTTON_RELEASE:
 			xcb_button_release_event_t* release = cast(xcb_button_release_event_t*)e;
 			//auto window = findWindow(release.child);
-			bindMgr.HandleButtonReleaseEvent(release);
+			BindManager.HandleButtonReleaseEvent(release);
 			xcb_allow_events(connection, XCB_ALLOW_REPLAY_POINTER, release.time);
 			break;
 
 		case XCB_KEY_PRESS:
-			bindMgr.HandleKeyPressEvent(cast(xcb_key_press_event_t*)e);
+			BindManager.HandleKeyPressEvent(cast(xcb_key_press_event_t*)e);
 			break;
 
 		case XCB_KEY_RELEASE:
-			bindMgr.HandleKeyReleaseEvent(cast(xcb_key_release_event_t*)e);
+			BindManager.HandleKeyReleaseEvent(cast(xcb_key_release_event_t*)e);
 			break;
 
 		case XCB_CREATE_NOTIFY:
@@ -225,73 +225,6 @@ public:
 		xcb_flush(connection);
 	}
 
-	Window FindWindow(short x, short y) {
-		import dwin.backend.layout : Layout;
-		import dwin.backend.container : Container;
-		import dwin.backend.workspace : Workspace;
-
-		Window traverseWin(Window window, short x, short y) {
-			window.Update();
-			if (x >= window.X && x <= window.X + window.Width && y >= window.Y && y <= window.Y + window.Height)
-				return window;
-			else
-				return null;
-		}
-
-		Window traverseCon(Container con, short x, short y) {
-			if (!con.IsVisible)
-				return null;
-			if (auto window = cast(Window)con) {
-				if (auto win = traverseWin(window, x, y))
-					return win;
-			} else if (auto layout = cast(Layout)con)
-				foreach (container; layout.Containers)
-					if (auto win = traverseCon(container, x, y))
-						return win;
-			return null;
-		}
-
-		Window traverseWorkspace(Workspace workspace, short x, short y) {
-			if (auto win = traverseCon(workspace.OnTop, x, y))
-				return win;
-			if (auto win = traverseCon(workspace.Root, x, y))
-				return win;
-			return null;
-		}
-
-		Window traverseLayout(Layout layout, short x, short y) {
-			if (!layout.IsVisible)
-				return null;
-			foreach (container; layout.Containers)
-				if (auto win = traverseCon(container, x, y))
-					return win;
-			return null;
-		}
-
-		Window traverseScreen(Screen screen, short x, short y) {
-			if (auto win = traverseLayout(screen.OnTop, x, y))
-				return win;
-			foreach (workspace; screen.Workspaces)
-				if (auto win = traverseWorkspace(workspace, x, y))
-					return win;
-			return null;
-		}
-
-		foreach (screen; screens)
-			if (auto win = traverseScreen(screen, x, y))
-				return win;
-		return null;
-	}
-
-	Screen FindScreen(short x, short y) {
-		foreach (screen; screens) {
-			log.Info("Screen: %s\tX: %s, Y: %s", screen, x, y);
-			if (screen.X <= x && screen.X + screen.Width >= x && screen.Y <= y && screen.Y + screen.Height >= y)
-				return screen;
-		}
-		return screens[0];
-	}
-
 	@property xcb_connection_t* Connection() {
 		return connection;
 	}
@@ -304,28 +237,12 @@ public:
 		return rootScreen;
 	}
 
-	@property XCBMouse Mouse() {
-		return mouse;
-	}
-
 	@property Atom[] LookupWMAtoms() {
 		return lookupWMAtoms;
 	}
 
 	@property Atom[] LookupNETAtoms() {
 		return lookupNETAtoms;
-	}
-
-	@property BindManager BindMgr() {
-		return bindMgr;
-	}
-
-	@property Screen[] Screens() {
-		return screens;
-	}
-
-	@property XCBWindow Root() {
-		return root;
 	}
 
 	@property xcb_key_symbols_t* Symbols() {
@@ -336,48 +253,12 @@ public:
 		return &ewmhConnection;
 	}
 
-	@property ref XCBWindow[] Windows() {
-		return windows;
+	override @property XCBWindow Root() {
+		return cast(XCBWindow)root;
 	}
 
-	@property ref auto OnNewWindow() {
-		return onNewWindow;
-	}
-
-	@property ref auto OnRemoveWindow() {
-		return onRemoveWindow;
-	}
-
-	@property ref auto OnRequestShowWindow() {
-		return onRequestShowWindow;
-	}
-
-	@property ref auto OnNotifyHideWindow() {
-		return onNotifyHideWindow;
-	}
-
-	@property ref auto OnRequestMoveWindow() {
-		return onRequestMoveWindow;
-	}
-
-	@property ref auto OnRequestResizeWindow() {
-		return onRequestResizeWindow;
-	}
-
-	@property ref auto OnRequestBorderSizeWindow() {
-		return onRequestBorderSizeWindow;
-	}
-
-	@property ref auto OnRequestSiblingWindow() {
-		return onRequestSiblingWindow;
-	}
-
-	@property ref auto OnRequestStackModeWindow() {
-		return onRequestStackModeWindow;
-	}
-
-	@property ref auto OnMouseMotion() {
-		return onMouseMotion;
+	override @property XCBBindManager BindManager() {
+		return cast(XCBBindManager)bindManager;
 	}
 
 private:
@@ -396,35 +277,18 @@ private:
 	xcb_screen_t* rootScreen;
 	xcb_key_symbols_t* symbols;
 	xcb_ewmh_connection_t ewmhConnection;
-	XCBWindow root;
-	XCBMouse mouse;
 
 	Atom[EnumCount!(WMAtoms)()] lookupWMAtoms;
 	Atom[EnumCount!(NETAtoms)()] lookupNETAtoms;
 
-	BindManager bindMgr;
-	XCBWindow[] windows;
-	Screen[] screens;
-
-	Event!(Window) onNewWindow;
-	Event!(Window) onRemoveWindow;
-	Event!(Window) onRequestShowWindow;
-	Event!(Window) onNotifyHideWindow;
-	Event!(Window, short, short) onRequestMoveWindow;
-	Event!(Window, ushort, ushort) onRequestResizeWindow;
-	Event!(Window, ushort) onRequestBorderSizeWindow;
-	Event!(Window, Window) onRequestSiblingWindow;
-	Event!(Window, ubyte) onRequestStackModeWindow;
-
-	Event!(short, short, uint) onMouseMotion;
-
 	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
-		foreach (i, window; windows)
-			if (window.InternalWindow == id) {
-				if (idx != null)
-					*idx = i;
-				return window;
-			}
+		foreach (i, win; windows)
+			if (auto window = cast(XCBWindow)win)
+				if (window.InternalWindow == id) {
+					if (idx != null)
+						*idx = i;
+					return window;
+				}
 
 		return null;
 	}
@@ -445,9 +309,9 @@ private:
 		foreach (netAtom; EnumMembers!NETAtoms)
 			lookupNETAtoms[netAtom.id] = Atom(this, netAtom.name);
 
-		lookupNETAtoms[NETAtoms.Supported.id].Change(root, lookupNETAtoms);
+		lookupNETAtoms[NETAtoms.Supported.id].Change(Root, lookupNETAtoms);
 
-		lookupNETAtoms[NETAtoms.ClientList.id].Delete(root);
+		lookupNETAtoms[NETAtoms.ClientList.id].Delete(Root);
 
 		if (xcb_xinerama_is_active_reply(connection, xcb_xinerama_is_active(connection), null).state) {
 			xcb_xinerama_query_screens_reply_t* reply = xcb_xinerama_query_screens_reply(connection,
@@ -477,7 +341,7 @@ private:
 			;
 		//dfmt on
 		xcb_generic_error_t* error = xcb_request_check(connection, xcb_change_window_attributes_checked(connection,
-				root.InternalWindow, XCB_CW_EVENT_MASK, &values));
+				Root.InternalWindow, XCB_CW_EVENT_MASK, &values));
 		if (error) {
 			//dfmt off
 			log.Fatal(

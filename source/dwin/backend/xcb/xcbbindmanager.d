@@ -1,49 +1,34 @@
-module dwin.backend.xcb.bindmanager;
+module dwin.backend.xcb.xcbbindmanager;
 
 import xcb.xcb;
 import xcb.xproto;
 import xcb.keysyms;
 
 import dwin.backend.xcb.xcb;
-import dwin.backend.xcb.key;
+import dwin.backend.xcb.keyparser;
+import dwin.backend.bindmanager;
 
 import dwin.log;
 
-final class BindManager {
+final class XCBBindManager : BindManager {
 public:
-	alias MapBind = void delegate(bool isPressed);
-	struct KeyBind {
-		Modifier modifier;
-		Key key;
-		MouseButton mouseButton;
-
-		@property bool IsValid() {
-			return !!key || !!mouseButton;
-		}
-
-		string toString() {
-			import std.format : format;
-
-			return format("KeyBind(%s, %x, %s)", modifier, key.key, mouseButton);
-		}
-	}
-
 	this(XCB xcb) {
 		this.xcb = xcb;
+		keyParser = new XCBKeyParser();
 		Rebind();
 	}
 
 	~this() {
-		ungrabKey(XCB_GRAB_ANY, Modifier.Any);
-		ungrabButton(MouseButton.Any, Modifier.Any);
+		ungrabKey(XCB_GRAB_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
+		ungrabButton(cast(MouseButton)XCB_BUTTON_INDEX_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
 	}
 
-	void Rebind() {
-		Key.Refresh(xcb);
-		immutable uint[] modifiers = [0, XCB_MOD_MASK_LOCK, Key.NumlockMask, Key.NumlockMask | XCB_MOD_MASK_LOCK];
+	override void Rebind() {
+		(cast(XCBKeyParser)keyParser).Refresh(xcb);
+		immutable uint[] modifiers = [0, XCB_MOD_MASK_LOCK, keyParser.NumlockMask, keyParser.NumlockMask | XCB_MOD_MASK_LOCK];
 
-		ungrabKey(XCB_GRAB_ANY, Modifier.Any);
-		ungrabButton(MouseButton.Any, Modifier.Any);
+		ungrabKey(XCB_GRAB_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
+		ungrabButton(cast(MouseButton)XCB_BUTTON_INDEX_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
 		foreach (keyBind, func; mappings) {
 			if (keyBind.mouseButton == MouseButton.None) {
 				xcb_keycode_t* code = xcb_key_symbols_get_keycode(xcb.Symbols, keyBind.key);
@@ -56,8 +41,7 @@ public:
 				xcb_free(code);
 			} else {
 				foreach (mod; modifiers)
-					grabButton(true,
-							XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
+					grabButton(true, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
 							XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, keyBind.mouseButton,
 							cast(Modifier)(keyBind.modifier | mod));
 			}
@@ -65,27 +49,7 @@ public:
 		xcb.Flush();
 	}
 
-	void Map(string keys, MapBind func) {
-		KeyBind keyBind = toKeyBind(keys);
-		if (!keyBind.IsValid) {
-			Log.MainLogger.Error("Invalid mapping (%s): '%s'", keyBind, keys);
-			return;
-		}
-
-		Map(keyBind, func);
-	}
-
-	void Unmap(string keys) {
-		KeyBind keyBind = toKeyBind(keys);
-		if (!keyBind.IsValid) {
-			Log.MainLogger.Error("Invalid mapping (%s): '%s'", keyBind, keys);
-			return;
-		}
-
-		Unmap(keyBind);
-	}
-
-	void Map(KeyBind keyBind, MapBind func) {
+	override void Map(KeyBind keyBind, MapBind func) {
 		if (!keyBind.IsValid) {
 			Log.MainLogger.Error("Invalid mapping (%s)", keyBind);
 			return;
@@ -96,7 +60,7 @@ public:
 		Rebind();
 	}
 
-	void Unmap(KeyBind keyBind) {
+	override void Unmap(KeyBind keyBind) {
 		if (!keyBind.IsValid) {
 			Log.MainLogger.Error("Invalid mapping (%s)", keyBind);
 			return;
@@ -107,21 +71,21 @@ public:
 
 	void HandleKeyPressEvent(xcb_key_press_event_t* e) {
 		xcb_keysym_t key = xcb_key_press_lookup_keysym(xcb.Symbols, e, 0);
-		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(Key.NumlockMask | Key.MouseMasks)), Key(key), MouseButton.None);
+		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)), Key(key), MouseButton.None);
 		if (auto map = keyBind in mappings)
 			(*map)(true);
 	}
 
 	void HandleKeyReleaseEvent(xcb_key_release_event_t* e) {
 		xcb_keysym_t key = xcb_key_press_lookup_keysym(xcb.Symbols, e, 0);
-		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(Key.NumlockMask | Key.MouseMasks)), Key(key), MouseButton.None);
+		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)), Key(key), MouseButton.None);
 		if (auto map = keyBind in mappings)
 			(*map)(false);
 	}
 
 	void HandleButtonPressEvent(xcb_button_press_event_t* e) {
-		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(Key.NumlockMask | Key.MouseMasks)), Key.ParseKey("None"),
-				cast(MouseButton)e.detail);
+		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)),
+				keyParser.ParseKey("None"), cast(MouseButton)e.detail);
 
 		xcb.Mouse.Set(e.root_x, e.root_y);
 		if (auto map = keyBind in mappings)
@@ -129,8 +93,8 @@ public:
 	}
 
 	void HandleButtonReleaseEvent(xcb_button_release_event_t* e) {
-		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(Key.NumlockMask | Key.MouseMasks)), Key.ParseKey("None"),
-				cast(MouseButton)e.detail);
+		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)),
+				keyParser.ParseKey("None"), cast(MouseButton)e.detail);
 
 		xcb.Mouse.Set(e.root_x, e.root_y);
 		if (auto map = keyBind in mappings)
@@ -139,28 +103,6 @@ public:
 
 private:
 	XCB xcb;
-	MapBind[KeyBind] mappings;
-
-	KeyBind toKeyBind(string keys) {
-		import std.array;
-		import std.string;
-		import std.algorithm;
-
-		auto split = keys.split("+").map!(strip);
-
-		MouseButton mouse = Key.ParseMouseButton(split[$ - 1]);
-		Key key = (mouse == MouseButton.None) ? Key.ParseKey(split[$ - 1]) : Key(0);
-		Modifier mod = Modifier.None;
-
-		foreach (m; split[0 .. $ - 1]) {
-			const Modifier mo = Key.ParseModifier(m);
-			if (!mo)
-				return KeyBind(Modifier.None, Key(0), MouseButton.None);
-			mod |= mo;
-		}
-
-		return KeyBind(cast(Modifier)(mod & ~Key.NumlockMask), key, mouse);
-	}
 
 	auto grabKey(bool owner_events, Modifier modifiers, xcb_keycode_t key, ubyte pointerMode, ubyte keyboardMode) {
 		//dfmt off

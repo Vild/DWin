@@ -4,8 +4,8 @@ import std.stdio;
 
 import dwin.log;
 import dwin.event;
-import dwin.backend.xcb.xcb;
 
+import dwin.backend.engine;
 import dwin.backend.window;
 import dwin.backend.screen;
 import dwin.backend.layout;
@@ -17,8 +17,10 @@ import std.container.array;
 final class DWin {
 public:
 	this(int display) {
+		import dwin.backend.xcb.xcb;
+
 		log = Log.MainLogger();
-		xcb = new XCB(display);
+		engine = new XCB(display);
 
 		setup();
 		sigchld(0); // Ignore when children dies
@@ -27,13 +29,13 @@ public:
 	void Run() {
 		quit = false;
 		while (!quit)
-			xcb.DoEvent();
+			engine.DoEvent();
 	}
 
 private:
 	bool quit;
 	Log log;
-	XCB xcb;
+	Engine engine;
 	Window window;
 
 	uint lastMove;
@@ -48,11 +50,9 @@ private:
 	}
 
 	void onNewWindow(Window window) {
-		log.Info("New Window: %s", window);
-
-		auto m = xcb.Mouse;
+		auto m = engine.Mouse;
 		m.Update();
-		auto scr = xcb.FindScreen(m.X, m.Y);
+		auto scr = engine.FindScreen(m.X, m.Y);
 		window.Screen = scr;
 		window.Move(scr.X, scr.Y);
 		scr.Add(window);
@@ -66,24 +66,22 @@ private:
 
 	void onRequestShowWindow(Window window) {
 		log.Info("Show: %s", window);
-		if (Layout parent = window.Parent)
-			parent.RequestShow(window);
+		window.Parent.RequestShow(window);
 	}
 
 	void onNotifyHideWindow(Window window) {
 		log.Info("Hide: %s", window);
-		if (Layout parent = window.Parent)
-			parent.NotifyHide(window);
+		window.Parent.NotifyHide(window);
 	}
 
 	void onRequestMoveWindow(Window window, short x, short y) {
+		Window root = engine.Root;
+		x = (x > root.Width - 32) ? cast(short)(root.Width - 32) : x;
+		y = (y > root.Height - 32) ? cast(short)(root.Height - 32) : y;
 		window.Move(x, y);
 	}
 
 	void onRequestResizeWindow(Window window, ushort width, ushort height) {
-		Screen scr = window.Screen;
-		width = (width < scr.Width) ? width : scr.Width;
-		height = (height < scr.Height) ? height : scr.Height;
 		window.Resize(width, height);
 	}
 
@@ -101,83 +99,78 @@ private:
 
 	void onMouseMotion(short x, short y, uint timestamp) {
 		timestamp /= 8; //TODO: Extract this to be a config flag
-		auto m = xcb.Mouse;
+		auto m = engine.Mouse;
 		m.Set(x, y);
 		if (timestamp == lastMove)
 			return;
 		lastMove = timestamp;
 		if (window)
-			if (Layout parent = window.Parent)
-				parent.MouseMotion(window, m);
+			window.Parent.MouseMotion(window, m);
 	}
 
 	void setup() {
-		xcb.OnNewWindow ~= &onNewWindow;
-		xcb.OnRemoveWindow ~= &onRemoveWindow;
-		xcb.OnRequestShowWindow ~= &onRequestShowWindow;
-		xcb.OnNotifyHideWindow ~= &onNotifyHideWindow;
-		xcb.OnRequestMoveWindow ~= &onRequestMoveWindow;
-		xcb.OnRequestResizeWindow ~= &onRequestResizeWindow;
-		xcb.OnRequestBorderSizeWindow ~= &onRequestBorderSizeWindow;
-		xcb.OnRequestSiblingWindow ~= &onRequestSiblingWindow;
-		xcb.OnRequestStackModeWindow ~= &onRequestStackModeWindow;
+		engine.OnNewWindow ~= &onNewWindow;
+		engine.OnRemoveWindow ~= &onRemoveWindow;
+		engine.OnRequestShowWindow ~= &onRequestShowWindow;
+		engine.OnNotifyHideWindow ~= &onNotifyHideWindow;
+		engine.OnRequestMoveWindow ~= &onRequestMoveWindow;
+		engine.OnRequestResizeWindow ~= &onRequestResizeWindow;
+		engine.OnRequestBorderSizeWindow ~= &onRequestBorderSizeWindow;
+		engine.OnRequestSiblingWindow ~= &onRequestSiblingWindow;
+		engine.OnRequestStackModeWindow ~= &onRequestStackModeWindow;
 
-		xcb.OnMouseMotion ~= &onMouseMotion;
+		engine.OnMouseMotion ~= &onMouseMotion;
 
 		import std.process : environment, spawnProcess;
 
 		auto childEnv = environment.toAA;
 		childEnv["DISPLAY"] = ":8";
-		xcb.BindMgr.Map("Escape", delegate(bool v) { quit = true; });
-		xcb.BindMgr.Map("Ctrl + Enter", delegate(bool v) {
+		engine.BindManager.Map("Escape", delegate(bool v) { quit = true; });
+		engine.BindManager.Map("Ctrl + Enter", delegate(bool v) {
 			if (v)
 				spawnProcess("xterm", childEnv);
 		});
-		xcb.BindMgr.Map("Ctrl + Backspace", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + Backspace", delegate(bool v) {
 			if (v)
 				spawnProcess("xeyes", childEnv);
 		});
 
-		xcb.BindMgr.Map("Ctrl + F5", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + F5", delegate(bool v) {
 			if (v)
 				printHierarchy();
 		});
 
-		xcb.BindMgr.Map("Ctrl + Button1", delegate(bool v) {
-			auto m = xcb.Mouse;
+		engine.BindManager.Map("Ctrl + Button1", delegate(bool v) {
+			auto m = engine.Mouse;
 			if (v) {
-				window = xcb.FindWindow(m.X, m.Y);
+				window = engine.FindWindow(m.X, m.Y);
 				if (window)
-					if (Layout parent = window.Parent)
-						parent.MouseMovePressed(window, m);
+					window.Parent.MouseMovePressed(window, m);
 			} else {
 				if (window)
-					if (Layout parent = window.Parent)
-						parent.MouseMoveReleased(window, m);
+					window.Parent.MouseMoveReleased(window, m);
 				window = null;
 			}
 		});
 
-		xcb.BindMgr.Map("Ctrl + Button3", delegate(bool v) {
-			auto m = xcb.Mouse;
+		engine.BindManager.Map("Ctrl + Button3", delegate(bool v) {
+			auto m = engine.Mouse;
 			if (v) {
-				window = xcb.FindWindow(m.X, m.Y);
+				window = engine.FindWindow(m.X, m.Y);
 				if (window)
-					if (Layout parent = window.Parent)
-						parent.MouseResizePressed(window, m);
+					window.Parent.MouseResizePressed(window, m);
 			} else {
 				if (window)
-					if (Layout parent = window.Parent)
-						parent.MouseResizeReleased(window, m);
+					window.Parent.MouseResizeReleased(window, m);
 				window = null;
 			}
 		});
 
-		xcb.BindMgr.Map("Ctrl + Shift + Escape", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + Shift + Escape", delegate(bool v) {
 			if (v) {
-				auto m = xcb.Mouse;
+				auto m = engine.Mouse;
 				m.Update();
-				Window window = xcb.FindWindow(m.X, m.Y);
+				Window window = engine.FindWindow(m.X, m.Y);
 				if (!window)
 					return;
 				window.Hide();
@@ -185,29 +178,29 @@ private:
 			}
 		});
 
-		xcb.BindMgr.Map("Ctrl + 1", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + 1", delegate(bool v) {
 			if (v) {
-				auto m = xcb.Mouse;
+				auto m = engine.Mouse;
 				m.Update();
-				auto scr = xcb.FindScreen(m.X, m.Y);
+				auto scr = engine.FindScreen(m.X, m.Y);
 				scr.CurrentWorkspace(scr.CurrentWorkspace - 1);
 			}
 		});
 
-		xcb.BindMgr.Map("Ctrl + 2", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + 2", delegate(bool v) {
 			if (v) {
-				auto m = xcb.Mouse;
+				auto m = engine.Mouse;
 				m.Update();
-				auto scr = xcb.FindScreen(m.X, m.Y);
+				auto scr = engine.FindScreen(m.X, m.Y);
 				scr.CurrentWorkspace(scr.CurrentWorkspace + 1);
 			}
 		});
 
-		xcb.BindMgr.Map("Ctrl + p", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + p", delegate(bool v) {
 			if (v) {
-				auto m = xcb.Mouse;
+				auto m = engine.Mouse;
 				m.Update();
-				Window window = xcb.FindWindow(m.X, m.Y);
+				Window window = engine.FindWindow(m.X, m.Y);
 				if (!window)
 					return;
 				log.Info("Promoting: %s", window.Title);
@@ -217,11 +210,11 @@ private:
 			}
 		});
 
-		xcb.BindMgr.Map("Ctrl + o", delegate(bool v) {
+		engine.BindManager.Map("Ctrl + o", delegate(bool v) {
 			if (v) {
-				auto m = xcb.Mouse;
+				auto m = engine.Mouse;
 				m.Update();
-				Window window = xcb.FindWindow(m.X, m.Y);
+				Window window = engine.FindWindow(m.X, m.Y);
 				if (!window)
 					return;
 				log.Info("Demoting: %s", window.Title);
@@ -267,7 +260,7 @@ private:
 
 	void printHierarchy() {
 		writeln("===Printing Hierarchy===");
-		foreach (screen; xcb.Screens)
+		foreach (screen; engine.Screens)
 			print(screen, 0);
 	}
 

@@ -8,9 +8,14 @@ abstract class Container {
 public:
 	abstract void Add(Container container);
 	abstract void Remove(Container container);
-	abstract void Move(short x, short y);
+	abstract void Move(short x, short y) {
+
+	}
+
 	abstract void Resize(ushort width, ushort height);
-	abstract void MoveResize(short x, short y, ushort width, ushort height);
+	abstract void MoveResize(short x, short y, ushort width, ushort height) {
+		Move(x, y);
+	}
 
 	abstract void Show(bool eventBased = true);
 	abstract void Hide(bool eventBased = true);

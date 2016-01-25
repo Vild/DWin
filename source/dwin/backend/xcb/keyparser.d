@@ -1,53 +1,25 @@
-module dwin.backend.xcb.key;
+module dwin.backend.xcb.keyparser;
 
 import xcb.xcb;
 import xcb.keysyms;
 import dwin.backend.xcb.xcb;
+import dwin.backend.bindmanager;
 import dwin.log;
 
 import std.string;
 
-enum Modifier : ushort {
-	None = 0,
-	Shift = XCB_MOD_MASK_SHIFT,
-	Lock = XCB_MOD_MASK_LOCK,
-	Control = XCB_MOD_MASK_CONTROL,
-	Mod1 = XCB_MOD_MASK_1,
-	Mod2 = XCB_MOD_MASK_2,
-	Mod3 = XCB_MOD_MASK_3,
-	Mod4 = XCB_MOD_MASK_4,
-	Mod5 = XCB_MOD_MASK_5,
-	Any = XCB_MOD_MASK_ANY,
-}
-
-enum MouseButton : ubyte {
-	None = 0,
-	Button1 = XCB_BUTTON_INDEX_1,
-	Button2 = XCB_BUTTON_INDEX_2,
-	Button3 = XCB_BUTTON_INDEX_3,
-	Button4 = XCB_BUTTON_INDEX_4,
-	Button5 = XCB_BUTTON_INDEX_5,
-	Any = XCB_BUTTON_INDEX_ANY,
-}
-
+private XCBKeyParser keyParser;
 private immutable static Key[string] keys;
+private alias ParseKey = keyParser.ParseKey;
 
-private alias ParseKey = Key.ParseKey;
-
-static struct Key {
+class XCBKeyParser : IKeyParser {
 public:
-	xcb_keysym_t key;
-	alias key this;
-	this(xcb_keysym_t key) {
-		this.key = key;
-	}
-
-	static void Refresh(XCB xcb) {
+	void Refresh(XCB xcb) {
 		refreshNumlockMask(xcb);
 		refreshModifiers(xcb);
 	}
 
-	static Key ParseKey(string key) {
+	override Key ParseKey(string key) {
 		key = key.toLower;
 		if (auto val = key in keys)
 			return *val;
@@ -55,7 +27,7 @@ public:
 			return keys["None".toLower];
 	}
 
-	static Modifier ParseModifier(string mod) {
+	override Modifier ParseModifier(string mod) {
 		mod = mod.toLower;
 		if (auto val = mod in modifiers)
 			return *val;
@@ -63,37 +35,30 @@ public:
 			return Modifier.None;
 	}
 
-	static MouseButton ParseMouseButton(string button) {
+	override MouseButton ParseMouseButton(string button) {
 		button = button.toLower;
 		if (button.length > "button".length && button[0 .. "button".length] == "button") {
 			int idx = button["button".length] - '1';
 			if (idx >= 0 && idx <= 5)
 				return cast(MouseButton)(MouseButton.Button1 + idx);
-		} else if (button == "any")
-			return MouseButton.Any;
+		}
 
 		return MouseButton.None;
 	}
 
-	@property static uint NumlockMask() {
+	@property override uint NumlockMask() {
 		return numlockMask;
 	}
 
-	@property static uint MouseMasks() {
+	@property override uint MouseMasks() {
 		return mouseMasks;
 	}
 
-	string toString() {
-		import std.format : format;
-
-		return format("%s", key);
-	}
-
 private:
-	static Modifier[string] modifiers;
-	static uint numlockMask;
-	static uint mouseMasks = XCB_KEY_BUT_MASK_BUTTON_1 + XCB_KEY_BUT_MASK_BUTTON_2 + XCB_KEY_BUT_MASK_BUTTON_3 + XCB_KEY_BUT_MASK_BUTTON_4 + XCB_KEY_BUT_MASK_BUTTON_5;
-	static void refreshNumlockMask(XCB xcb) {
+	Modifier[string] modifiers;
+	uint numlockMask;
+	uint mouseMasks = XCB_KEY_BUT_MASK_BUTTON_1 + XCB_KEY_BUT_MASK_BUTTON_2 + XCB_KEY_BUT_MASK_BUTTON_3 + XCB_KEY_BUT_MASK_BUTTON_4 + XCB_KEY_BUT_MASK_BUTTON_5;
+	void refreshNumlockMask(XCB xcb) {
 		numlockMask = 0; //; // Removes mouse buttons flags
 		xcb_get_modifier_mapping_reply_t* reply = xcb_get_modifier_mapping_reply(xcb.Connection,
 				xcb_get_modifier_mapping(xcb.Connection), null);
@@ -115,7 +80,7 @@ private:
 					numlockMask |= (1 << i);
 	}
 
-	static void refreshModifiers(XCB xcb) {
+	void refreshModifiers(XCB xcb) {
 		modifiers = null;
 		//dfmt off
 		xcb_keycode_t*[string] mods = [
@@ -196,7 +161,6 @@ private:
 		modifiers["mod4"] = Modifier.Mod4;
 		modifiers["mod5"] = Modifier.Mod5;
 		modifiers["lock"] = Modifier.Lock;
-		modifiers["any"] = Modifier.Any;
 	}
 }
 
