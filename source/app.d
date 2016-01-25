@@ -36,8 +36,7 @@ int main(string[] args) {
 	Pid Xephyr;
 	if (!noXephyr)
 		Xephyr = spawnProcess([`Xephyr`, `-keybd`, `ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=`,
-				`-name`, title, `-ac`, `-br`, `-noreset`, `+extension`, `RANDR`, `+xinerama`, `-screen`, size,
-				`:` ~ to!string(display), `-screen`, size, `:` ~ to!string(display)]);
+				`-name`, title, `-ac`, `-br`, `-noreset`, `+extension`, `RANDR`, `+xinerama`, `-screen`, size, `:` ~ to!string(display)]);
 	scope (exit)
 		if (Xephyr)
 			kill(Xephyr);
