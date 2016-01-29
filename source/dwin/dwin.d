@@ -17,9 +17,10 @@ import std.container.array;
 final class DWin {
 public:
 	this(int display) {
-		import dwin.backend.xcb.xcb;
+		import dwin.backend.xcb.xcb : XCB;
 
 		log = Log.MainLogger();
+
 		engine = new XCB(display);
 
 		setup();
@@ -32,10 +33,14 @@ public:
 			engine.DoEvent();
 	}
 
+	@property.Engine Engine() {
+		return engine;
+	}
+
 private:
 	bool quit;
 	Log log;
-	Engine engine;
+	.Engine engine;
 	Window window;
 
 	uint lastMove;
