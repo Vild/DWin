@@ -1,13 +1,11 @@
-BindManager.Map("Ctrl + Enter", function(var pressed) {
-	if (pressed)
-		System.Exec("xterm");
-});
-
-BindManager.Map("Ctrl + Backspace", function(var pressed) {
-	if (pressed)
-		System.Exec("xeyes");
-});
-
 Info.AddCtor("init.ds", function() {
-	Log.Info("Success");
+	BindManager.Map("Ctrl + Enter", function(var pressed) {
+		if (pressed)
+			System.Exec("xterm");
+	});
+
+	BindManager.Map("Ctrl + Backspace", function(var pressed) {
+		if (pressed)
+			System.Exec("xeyes");
+	});
 });
