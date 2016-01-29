@@ -72,6 +72,20 @@ abstract class BindManager {
 		Unmap(keyBind);
 	}
 
+	bool IsBinded(string keys) {
+		KeyBind keyBind = toKeyBind(keys);
+		if (!keyBind.IsValid) {
+			Log.MainLogger.Error("Invalid mapping (%s): '%s'", keyBind, keys);
+			return false;
+		}
+
+		return IsBinded(keyBind);
+	}
+
+	bool IsBinded(KeyBind keys) {
+		return !!(keys in mappings);
+	}
+
 	abstract void Map(KeyBind keyBind, MapBind func);
 	abstract void Unmap(KeyBind keyBind);
 protected:
