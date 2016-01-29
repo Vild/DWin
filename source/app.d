@@ -20,7 +20,7 @@ int main(string[] args) {
 	writeln("Display: ", display, " noXephyr: ", noXephyr);
 
 	string title = "DWin - D always win!";
-	string size = "1280x720";
+	string size = "1920x1080";
 
 	/*
 		This is hardcoded for now!
@@ -34,21 +34,20 @@ int main(string[] args) {
 			-keybd ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=terminate:ctrl_alt_bksp
 	*/
 	Pid Xephyr;
-	if (!noXephyr)
+	if (!noXephyr) {
+		import core.thread : Thread;
+		import core.time : seconds;
+
 		Xephyr = spawnProcess([`Xephyr`, `-keybd`, `ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=`,
 				`-name`, title, `-ac`, `-br`, `-noreset`, `+extension`, `RANDR`, `+xinerama`, `-screen`, size, `:` ~ to!string(display)]);
+		environment["DISPLAY"] = ":" ~ to!string(display);
+		Thread.sleep(1.seconds);
+	}
 	scope (exit)
 		if (Xephyr)
 			kill(Xephyr);
 
-	import core.thread : Thread;
-	import core.time : seconds;
-
-	auto childEnv = environment.toAA;
-	childEnv["DISPLAY"] = ":" ~ to!string(display);
-
-	Thread.sleep(1.seconds);
-	spawnProcess(["feh", "--bg-scale", "http://wild.tk/DWinBG.png"], childEnv);
+	spawnProcess(["feh", "--bg-scale", "http://wild.tk/DWinBG.png"]);
 
 	auto dwin = new DWin(display);
 	scope (exit)
