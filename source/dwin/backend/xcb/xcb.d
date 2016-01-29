@@ -63,8 +63,7 @@ public:
 		if (!xcb_ewmh_init_atoms_replies(&ewmhConnection, cookie, null))
 			log.Fatal("Could not connect to ewmh!");
 
-		rootScreen = getScreen(defaultScreen);
-		root = new XCBWindow(this, rootScreen.root);
+		root = new XCBWindow(this, getScreen(defaultScreen).root);
 		mouse = new XCBMouse(this);
 
 		bindManager = new XCBBindManager(this);
@@ -233,10 +232,6 @@ public:
 		return defaultScreen;
 	}
 
-	@property xcb_screen_t* RootScreen() {
-		return rootScreen;
-	}
-
 	@property Atom[] LookupWMAtoms() {
 		return lookupWMAtoms;
 	}
@@ -274,7 +269,6 @@ private:
 	Log log;
 	xcb_connection_t* connection;
 	int defaultScreen;
-	xcb_screen_t* rootScreen;
 	xcb_key_symbols_t* symbols;
 	xcb_ewmh_connection_t ewmhConnection;
 
