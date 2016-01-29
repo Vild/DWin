@@ -1,0 +1,17 @@
+BindManager.Map("Ctrl + Y", function(var pressed) {
+	if (pressed)
+		if (BindManager.IsBinded("Ctrl + Space") == false)
+			BindManager.Map("Ctrl + Space", function(var pressed) {
+				if (pressed)
+					Log.Info("Bind worked!");
+			});
+});
+
+BindManager.Map("Ctrl + U", function(var pressed) {
+	if (pressed)
+		BindManager.Unmap("Ctrl + Space");
+});
+
+Info.AddCtor("bindUnbindTest.ds", function() {
+	Log.Info("bindUnbindTest.ds");
+});

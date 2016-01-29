@@ -4,6 +4,7 @@ import std.stdio;
 
 import dwin.log;
 import dwin.event;
+import dwin.script.script;
 
 import dwin.backend.engine;
 import dwin.backend.window;
@@ -22,9 +23,11 @@ public:
 		log = Log.MainLogger();
 
 		engine = new XCB(display);
+		script = new Script(this);
 
 		setup();
 		sigchld(0); // Ignore when children dies
+		script.RunCtors();
 	}
 
 	void Run() {
@@ -38,6 +41,7 @@ public:
 	}
 
 private:
+	Script script;
 	bool quit;
 	Log log;
 	.Engine engine;
@@ -126,19 +130,7 @@ private:
 
 		engine.OnMouseMotion ~= &onMouseMotion;
 
-		import std.process : environment, spawnProcess;
-
-		auto childEnv = environment.toAA;
-		childEnv["DISPLAY"] = ":8";
 		engine.BindManager.Map("Escape", delegate(bool v) { quit = true; });
-		engine.BindManager.Map("Ctrl + Enter", delegate(bool v) {
-			if (v)
-				spawnProcess("xterm", childEnv);
-		});
-		engine.BindManager.Map("Ctrl + Backspace", delegate(bool v) {
-			if (v)
-				spawnProcess("xeyes", childEnv);
-		});
 
 		engine.BindManager.Map("Ctrl + F5", delegate(bool v) {
 			if (v)
