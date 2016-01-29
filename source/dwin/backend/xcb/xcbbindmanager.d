@@ -18,11 +18,6 @@ public:
 		Rebind();
 	}
 
-	~this() {
-		ungrabKey(XCB_GRAB_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
-		ungrabButton(cast(MouseButton)XCB_BUTTON_INDEX_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
-	}
-
 	override void Rebind() {
 		(cast(XCBKeyParser)keyParser).Refresh(xcb);
 		immutable uint[] modifiers = [0, XCB_MOD_MASK_LOCK, keyParser.NumlockMask, keyParser.NumlockMask | XCB_MOD_MASK_LOCK];
@@ -55,7 +50,6 @@ public:
 			return;
 		}
 
-		Log.MainLogger.Debug("Mapping '%s' to func@0x%x", keyBind, func.funcptr);
 		mappings[keyBind] = func;
 		Rebind();
 	}
