@@ -132,11 +132,6 @@ private:
 
 		engine.BindManager.Map("Escape", delegate(bool v) { quit = true; });
 
-		engine.BindManager.Map("Ctrl + F5", delegate(bool v) {
-			if (v)
-				printHierarchy();
-		});
-
 		engine.BindManager.Map("Ctrl + Button1", delegate(bool v) {
 			auto m = engine.Mouse;
 			if (v) {
@@ -221,44 +216,4 @@ private:
 			}
 		});
 	}
-
-	void print(Screen screen, int indent) {
-		writefln("%*sScreen: %s", indent * 2, " ", screen.Name);
-		writefln("%*s* OnTop: ", indent * 2, " ");
-		print(screen.OnTop, indent + 1);
-		writefln("%*s* Workspaces: ", indent * 2, " ");
-		foreach (workspace; screen.Workspaces)
-			print(workspace, indent + 1);
-	}
-
-	void print(Workspace workspace, int indent) {
-		writefln("%*s* Name: %s", indent * 2, " ", workspace.Name);
-		writefln("%*s* Layout: ", indent * 2, " ");
-		print(workspace.Root, indent + 1);
-	}
-
-	void print(Container con, int indent) {
-		if (auto win = cast(Window)con)
-			print(win, indent);
-		else if (auto layout = cast(Layout)con)
-			print(layout, indent);
-	}
-
-	void print(Layout layout, int indent) {
-		writefln("%*s* Type: %s", indent * 2, " ", typeid(layout));
-		writefln("%*s* Visible: %s", indent * 2, " ", layout.IsVisible);
-		foreach (container; layout.Containers)
-			print(container, indent + 1);
-	}
-
-	void print(Window window, int indent) {
-		writefln("%*sWindow: %s Visible: %s", indent * 2, " ", window.Title, window.IsVisible);
-	}
-
-	void printHierarchy() {
-		writeln("===Printing Hierarchy===");
-		foreach (screen; engine.Screens)
-			print(screen, 0);
-	}
-
 }

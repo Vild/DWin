@@ -1,0 +1,62 @@
+Info.AddCtor("printHierarchy.ds", function() {
+	BindManager.Map("Ctrl + F5", function(var pressed) {
+		if (pressed)
+			printHiearchy.Print(Engine.GetScreens());
+	});
+});
+
+class PrintHierarchy {
+	function getIndent(var indent) {
+		var out = "";
+		for (var i = 0; i < indent; i += 1)
+			out ~= "  ";
+		return out;
+	}
+
+	function printScreen(var screen, var indent) {
+		var ind = getIndent(indent);
+		Log.Info(ind ~ "Screen: " ~ screen.Name);
+		Log.Info(ind ~ "* OnTop: ");
+		printLayout(screen.OnTop, indent + 1);
+		Log.Info(ind ~ "* Workspaces: ");
+		foreach (workspace; screen.Workspaces)
+			printWorkspace(workspace, indent + 1);
+	}
+
+	function printWorkspace(var workspace, var indent) {
+		var ind = getIndent(indent);
+		Log.Info(ind ~ "* Name: " ~ workspace.Name);
+		Log.Info(ind ~ "* OnTop: ");
+		printLayout(workspace.OnTop, indent + 1);
+		Log.Info(ind ~ "* Root: ");
+		printLayout(workspace.Root, indent + 1);
+	}
+
+	function printContainer(var con, var indent) {
+		if (con.IsWindow)
+			printWindow(con, indent);
+		else
+			printLayout(con, indent);
+	}
+
+	function printLayout(var layout, var indent) {
+		var ind = getIndent(indent);
+		Log.Info(ind ~ "* Type: " ~ layout.Type);
+		Log.Info(ind ~ "* Visible: " ~ layout.IsVisible);
+		foreach (container; layout.Containers)
+			printContainer(container, indent + 1);
+	}
+
+	function printWindow(var window, var indent) {
+		var ind = getIndent(indent);
+		Log.Info(ind ~ "Window: " ~ window.Title ~ " Visible: " ~ window.IsVisible);
+	}
+
+	function Print(var screens) {
+		Log.Info("===Printing Hierarchy===");
+		foreach (screen; screens)
+			printScreen(screen, 0);
+	}
+};
+
+var printHiearchy = new PrintHierarchy();

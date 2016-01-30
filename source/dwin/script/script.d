@@ -12,11 +12,13 @@ import dwin.log;
 class Script {
 public:
 	this(DWin dwin) {
+		engineAPI.Init(dwin.Engine);
 		logAPI.Init();
 		bindManagerAPI.Init(dwin.Engine.BindManager);
 
 		env = var.emptyObject;
 		env.BindManager = bindManagerAPI.Get();
+		env.Engine = engineAPI.Get();
 		env.Info = infoAPI.Get();
 		env.Log = logAPI.Get();
 		env.System = systemAPI.Get();
@@ -64,10 +66,11 @@ public:
 private:
 	var env;
 
-	InfoAPI infoAPI;
-	SystemAPI systemAPI;
-	LogAPI logAPI;
 	BindManagerAPI bindManagerAPI;
+	EngineAPI engineAPI;
+	InfoAPI infoAPI;
+	LogAPI logAPI;
+	SystemAPI systemAPI;
 
 	void run(string str) {
 		interpret(str, env);

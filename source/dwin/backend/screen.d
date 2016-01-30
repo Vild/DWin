@@ -17,6 +17,7 @@ public:
 		this.height = height;
 		onTop = new FloatingLayout();
 		onTop.MoveResize(x, y, width, height);
+		onTop.Show();
 		this.workspaces = workspaces;
 		foreach (workspace; this.workspaces)
 			workspace.MoveResize(x, y, width, height);
