@@ -68,7 +68,6 @@ class TilingLayout : Layout {
 		state = HandlingState.Move;
 		this.target = target;
 		target.Update();
-		target.Focus();
 		mouse.Style = MouseStyles.Moving;
 	}
 
@@ -79,7 +78,6 @@ class TilingLayout : Layout {
 		state = HandlingState.Resize;
 		this.target = target;
 		target.Update();
-		target.Focus();
 		mouse.Style = MouseStyles.Resizing;
 	}
 

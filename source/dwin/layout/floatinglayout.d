@@ -11,6 +11,7 @@ class FloatingLayout : Layout {
 public:
 	override void Add(Container container) {
 		super.Add(container);
+		container.Focus();
 	}
 
 	override void Remove(Container container) {
