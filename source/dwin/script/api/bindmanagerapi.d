@@ -10,7 +10,14 @@ struct BindManagerAPI {
 	}
 
 	var Map(var, var[] args) {
-		bindManager.Map(cast(string)args[0], delegate(bool v) { args[1](v); });
+		bindManager.Map(cast(string)args[0], delegate(bool v) {
+			try {
+				args[1](v);
+			}
+			catch (Exception e) { // "No such property" throws a object.Exception
+				Log.MainLogger.Error("%s", e.msg);
+			}
+		});
 
 		return var.emptyObject;
 	}

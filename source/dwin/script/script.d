@@ -2,6 +2,8 @@ module dwin.script.script;
 
 import std.stdio;
 import std.file;
+import std.string;
+import std.algorithm.iteration;
 import dwin.dwin;
 import arsd.script;
 public import dwin.script.utils;
@@ -23,8 +25,10 @@ public:
 		env.Log = logAPI.Get();
 		env.System = systemAPI.Get();
 
-		foreach (file; dirEntries("scripts/", SpanMode.breadth))
+		foreach (file; dirEntries("scripts/", SpanMode.breadth).filter!(f => f.name.endsWith(".ds"))) {
+			Log.MainLogger.Info("Loading script: %s", file);
 			runFile(File(file, "r"));
+		}
 	}
 
 	~this() {
@@ -73,10 +77,20 @@ private:
 	SystemAPI systemAPI;
 
 	void run(string str) {
-		interpret(str, env);
+		try {
+			interpret(str, env);
+		}
+		catch (Exception e) { // "No such property" throws a object.Exception
+			Log.MainLogger.Error("%s", e.msg);
+		}
 	}
 
 	void runFile(File file) {
-		interpretFile(file, env);
+		try {
+			interpretFile(file, env);
+		}
+		catch (Exception e) { // "No such property" throws a object.Exception
+			Log.MainLogger.Error("%s", e.msg);
+		}
 	}
 }
