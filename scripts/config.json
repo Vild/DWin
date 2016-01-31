@@ -1,0 +1,4 @@
+{
+	"Ctrl + Space": "exec xterm",
+	"Ctrl + Shift + Space": "call cmatrix()"
+}

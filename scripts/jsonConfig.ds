@@ -1,0 +1,32 @@
+Info.AddCtor("jsonConfig.ds", function() {
+	var config = new Config("config.json");
+});
+
+class Config {
+	this(var file) {
+		mapKeys(load(file));
+	}
+
+	function load(file) {
+		return Data.fromJson(IO.ReadFile(file));
+	}
+
+	function mapKeys(data) {
+		foreach (key, val; data) {
+			var split = Data.Split(val);
+
+			var args = split[1 .. $];
+
+			if (split[0] == "exec")
+				BindManager.Map(key, function(var pressed) {
+					if (pressed)
+						System.SpawnProcess(args);
+				});
+			else if (split[0] == "call")
+				BindManager.Map(key, function(var pressed) {
+					if (pressed)
+						eval(Data.Join(args, " "));
+				});
+		}
+	}
+};
