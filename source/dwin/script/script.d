@@ -20,8 +20,10 @@ public:
 
 		env = var.emptyObject;
 		env.BindManager = bindManagerAPI.Get();
+		env.Data = dataAPI.Get();
 		env.Engine = engineAPI.Get();
 		env.Info = infoAPI.Get();
+		env.IO = ioAPI.Get();
 		env.Log = logAPI.Get();
 		env.System = systemAPI.Get();
 
@@ -71,8 +73,10 @@ private:
 	var env;
 
 	BindManagerAPI bindManagerAPI;
+	DataAPI dataAPI;
 	EngineAPI engineAPI;
 	InfoAPI infoAPI;
+	IOAPI ioAPI;
 	LogAPI logAPI;
 	SystemAPI systemAPI;
 
