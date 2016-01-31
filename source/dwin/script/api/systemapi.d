@@ -3,7 +3,7 @@ module dwin.script.api.systemapi;
 import dwin.script.utils;
 
 struct SystemAPI {
-	var Exec(var, var[] args) {
+	var SpawnProcess(var, var[] args) {
 		import std.process : spawnProcess;
 
 		auto arg0 = args[0];

@@ -1,11 +1,11 @@
 Info.AddCtor("init.ds", function() {
 	BindManager.Map("Ctrl + Enter", function(var pressed) {
 		if (pressed)
-			System.Exec("xterm");
+			System.SpawnProcess("xterm");
 	});
 
 	BindManager.Map("Ctrl + Backspace", function(var pressed) {
 		if (pressed)
-			System.Exec("xeyes");
+			System.SpawnProcess("xeyes");
 	});
 });
