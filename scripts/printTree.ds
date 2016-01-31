@@ -1,11 +1,12 @@
-Info.AddCtor("printHierarchy.ds", function() {
+Info.AddCtor("printTree.ds", function() {
+	var printTree = new PrintTree();
 	BindManager.Map("Ctrl + F5", function(var pressed) {
 		if (pressed)
-			printHiearchy.Print(Engine.GetScreens());
+			printTree.Print(Engine.GetScreens());
 	});
 });
 
-class PrintHierarchy {
+class PrintTree {
 	function getIndent(var indent) {
 		var out = "";
 		for (var i = 0; i < indent; i += 1)
@@ -53,10 +54,8 @@ class PrintHierarchy {
 	}
 
 	function Print(var screens) {
-		Log.Info("===Printing Hierarchy===");
+		Log.Info("===Printing Tree===");
 		foreach (screen; screens)
 			printScreen(screen, 0);
 	}
 };
-
-var printHiearchy = new PrintHierarchy();
