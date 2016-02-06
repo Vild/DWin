@@ -20,7 +20,7 @@ import dwin.util.data;
 import std.traits;
 import std.algorithm.searching;
 import std.algorithm.mutation;
-public import std.c.stdlib : xcb_free = free;
+public import core.stdc.stdlib : xcb_free = free;
 import std.conv;
 
 class XCB : Engine {
@@ -46,7 +46,9 @@ public:
 		ActiveWindow = AtomName(4, "_NET_ACTIVE_WINDOW"),
 		WMWindowType = AtomName(5, "_NET_WM_WINDOW_TYPE"),
 		WMWindowTypeDialog = AtomName(6, "_NET_WM_WINDOW_TYPE_DIALOG"),
-		ClientList = AtomName(7, "_NET_CLIENT_LIST")
+		ClientList = AtomName(7, "_NET_CLIENT_LIST"),
+		WMStrut = AtomName(8, "_NET_WM_STRUT"),
+		WMStrutPartial = AtomName(9, "_NET_WM_STRUT_PARTIAL")
 	}
 	//dfmt on
 
@@ -78,8 +80,12 @@ public:
 	}
 
 	override void DoEvent() {
-		const xcb_generic_event_t* e = xcb_wait_for_event(connection);
-
+		scope (exit)
+			foreach (cb; tickCallbacks)
+				cb();
+		const xcb_generic_event_t* e = xcb_poll_for_event(connection);
+		if (!e)
+			return;
 		XCBEvent ev = cast(XCBEvent)(e.response_type & ~0x80);
 
 		switch (ev) with (XCBEvent) {
@@ -90,13 +96,24 @@ public:
 		case XCB_NULL_EVENT: // Do nothing
 			break;
 
+		case XCB_ENTER_NOTIFY:
+			auto notify = cast(xcb_enter_notify_event_t*)e;
+			Window window = findWindow(notify.event);
+			if (window && window.Workspace)
+				window.Workspace.ActiveWindow = window;
+			break;
+
 		case XCB_PROPERTY_NOTIFY:
 			auto notify = cast(xcb_property_notify_event_t*)e;
 
 			if (notify.state == XCB_PROPERTY_DELETE)
 				break; // Ignore
-			else
-				log.Error("Doesn't handle XCB_PROPERTY_NOTIFY state: %s", notify.state);
+
+			log.Debug("notify: %s", *notify);
+
+			Window window = findWindow(notify.window);
+			if (window)
+				window.Update();
 			break;
 
 		case XCB_MAPPING_NOTIFY:
@@ -138,6 +155,10 @@ public:
 		case XCB_CREATE_NOTIFY:
 			auto notify = cast(xcb_create_notify_event_t*)e;
 			auto window = new XCBWindow(this, notify.window);
+			uint values = XCB_EVENT_MASK_PROPERTY_CHANGE | XCB_EVENT_MASK_ENTER_WINDOW;
+			xcb_change_window_attributes(connection, notify.window, XCB_CW_EVENT_MASK, &values);
+
+			log.Error("CreateNotify: %s %s", *notify, window);
 			windows ~= window;
 			onNewWindow(window);
 			break;
@@ -149,8 +170,11 @@ public:
 			auto window = findWindow(notify.window, &idx);
 			if (!window)
 				break;
+			log.Error("DestroyNotify: %s %s", *notify, window);
 			window.Dead = true;
 			onRemoveWindow(window);
+			if (window.Workspace && window.Workspace.ActiveWindow == window)
+				window.Workspace.ActiveWindow = null;
 			window.destroy;
 			windows = windows.remove(idx);
 			break;
@@ -164,6 +188,7 @@ public:
 		case XCB_MAP_REQUEST:
 			auto map = cast(xcb_map_request_event_t*)e;
 			auto window = findWindow(map.window);
+			log.Error("MapRequest: %s %s", *map, window);
 			if (window)
 				onRequestShowWindow(window);
 			break;
@@ -171,6 +196,7 @@ public:
 		case XCB_UNMAP_NOTIFY:
 			auto unmap = cast(xcb_unmap_notify_event_t*)e;
 			auto window = findWindow(unmap.window);
+			log.Error("UnmapNotify: %s %s", *unmap, window);
 			if (window)
 				onNotifyHideWindow(window);
 			break;
@@ -216,12 +242,17 @@ public:
 			log.Info("ClientMessage: format: %s, window: %s, type: %s, data: %s", msg.format, msg.window, msg.type, msg.data);
 			break;
 		}
+
 		Flush();
 		xcb_free(cast(void*)e);
 	}
 
 	void Flush() {
 		xcb_flush(connection);
+	}
+
+	@property uint RootEventMask() {
+		return rootEventMask;
 	}
 
 	@property xcb_connection_t* Connection() {
@@ -266,6 +297,15 @@ private:
 		ClosedInvalidScreen
 	}
 
+	//dfmt off
+	uint rootEventMask =
+		XCB_EVENT_MASK_STRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
+		XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, CreateNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
+		XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | // CirculateRequest, ConfigureRequest, MapRequest
+		XCB_EVENT_MASK_PROPERTY_CHANGE // PropertyNotify
+		;
+	//dfmt on
+
 	Log log;
 	xcb_connection_t* connection;
 	int defaultScreen;
@@ -303,6 +343,9 @@ private:
 		foreach (netAtom; EnumMembers!NETAtoms)
 			lookupNETAtoms[netAtom.id] = Atom(this, netAtom.name);
 
+		foreach (netAtom; EnumMembers!NETAtoms)
+			log.Debug("%s => %s", netAtom.name, lookupNETAtoms[netAtom.id].atom);
+
 		lookupNETAtoms[NETAtoms.Supported.id].Change(Root, lookupNETAtoms);
 
 		lookupNETAtoms[NETAtoms.ClientList.id].Delete(Root);
@@ -313,29 +356,21 @@ private:
 
 			auto it = xcb_xinerama_query_screens_screen_info_iterator(reply);
 			for (; it.rem > 0; xcb_xinerama_screen_info_next(&it))
-				screens ~= new Screen(format("Screen %d", reply.number - it.rem), it.data.x_org, it.data.y_org,
+				screens ~= new Screen(this, format("Screen %d", reply.number - it.rem), it.data.x_org, it.data.y_org,
 						it.data.width, it.data.height);
 
 			xcb_free(reply);
 		} else {
 			Root.Update();
-			screens ~= new Screen("Root Screen", Root.X, Root.Y, Root.Width, Root.Height);
+			screens ~= new Screen(this, "Root Screen", Root.X, Root.Y, Root.Width, Root.Height);
 		}
 
 		Flush();
 	}
 
 	void checkOtherWM() {
-		//dfmt off
-		uint values =
-			XCB_EVENT_MASK_STRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
-			XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, CreateNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
-			XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | // CirculateRequest, ConfigureRequest, MapRequest
-			XCB_EVENT_MASK_PROPERTY_CHANGE // PropertyNotify
-			;
-		//dfmt on
 		xcb_generic_error_t* error = xcb_request_check(connection, xcb_change_window_attributes_checked(connection,
-				Root.InternalWindow, XCB_CW_EVENT_MASK, &values));
+				Root.InternalWindow, XCB_CW_EVENT_MASK, &rootEventMask));
 		if (error) {
 			//dfmt off
 			log.Fatal(

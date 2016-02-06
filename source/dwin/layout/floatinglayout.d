@@ -1,5 +1,8 @@
 module dwin.layout.floatinglayout;
 
+import std.container.array;
+import std.algorithm.searching;
+import dwin.backend.engine;
 import dwin.backend.container;
 import dwin.backend.mouse;
 import dwin.backend.layout;
@@ -9,6 +12,10 @@ import std.math;
 
 class FloatingLayout : Layout {
 public:
+	this(Engine engine) {
+		super(engine);
+	}
+
 	override void Add(Container container) {
 		super.Add(container);
 		container.Focus();
@@ -62,32 +69,7 @@ public:
 		pointerDiff = vec2(mouse.X - (target.X + target.Width / 2), mouse.Y - (target.Y + target.Height / 2));
 		oldGeom = Geometry(target.X, target.Y, target.Width, target.Height);
 
-		/*
-			---------------
-			|1,1| 2,1 |3,1|
-			|---|-----|---|
-			|1,2| 2,2 |3,2|
-			|---|-----|---|
-			|1,3| 2,3 |3,3|
-			---------------
-		*/
-
-		const int pointX = (mouse.X - target.X) / (target.Width / 4) + 1;
-		const int pointY = (mouse.Y - target.Y) / (target.Height / 4) + 1;
-
-		if (!!(pointX & 0b100))
-			column = GridPos.Third;
-		else if (!!(pointX & 0b10))
-			column = GridPos.Second;
-		else if (!!(pointX & 0b1))
-			column = GridPos.First;
-
-		if (!!(pointY & 0b100))
-			row = GridPos.Third;
-		else if (!!(pointY & 0b10))
-			row = GridPos.Second;
-		else if (!!(pointY & 0b1))
-			row = GridPos.First;
+		gridPos = target.GetGridPosition(mouse.X - target.X, mouse.Y - target.Y);
 	}
 
 	override void MouseMoveReleased(Container target, Mouse mouse) {
@@ -113,8 +95,6 @@ public:
 		if (!target)
 			return;
 
-		//TODO: (?) crazy hack with xcb_wait_for_event, to handle events faster
-
 		if (state == HandlingState.Move)
 			move(target, mouse);
 		else if (state == HandlingState.Resize)
@@ -128,19 +108,12 @@ private:
 		Resize
 	}
 
-	enum GridPos {
-		First,
-		Second,
-		Third
-	}
-
 	HandlingState state;
 	Container target;
 	vec2 pointerDiff;
 	Geometry oldGeom;
 
-	GridPos row;
-	GridPos column;
+	GridPosition gridPos;
 
 	void move(Container target, Mouse mouse) {
 		short x = cast(short)(mouse.X - pointerDiff.x);
@@ -160,8 +133,8 @@ private:
 		const int oldw = w;
 		const int oldh = h;
 
-		if (row == GridPos.First) {
-			if (column == GridPos.First) {
+		if (gridPos.y == PositionPart.First) {
+			if (gridPos.x == PositionPart.First) {
 				x = (mouse.X) - (pointerDiff.x + oldGeom.width / 2);
 				w += oldx - x;
 				if (w < minSize) {
@@ -175,14 +148,14 @@ private:
 					y -= (minSize - h);
 					h += minSize - h;
 				}
-			} else if (column == GridPos.Second) {
+			} else if (gridPos.x == PositionPart.Second) {
 				y = (mouse.Y) - (pointerDiff.y + oldGeom.height / 2);
 				h += oldy - y;
 				if (h < minSize) {
 					y -= (minSize - h);
 					h += minSize - h;
 				}
-			} else /*if (column == GridPos.Third) */ {
+			} else /*if (gridPos.x == PositionPart.Third) */ {
 				w = (mouse.X - oldGeom.x) - (pointerDiff.x - oldGeom.width / 2);
 				if (w < minSize)
 					w += minSize - w;
@@ -194,8 +167,8 @@ private:
 					h += minSize - h;
 				}
 			}
-		} else if (row == GridPos.Second) {
-			if (column == GridPos.First) {
+		} else if (gridPos.y == PositionPart.Second) {
+			if (gridPos.x == PositionPart.First) {
 				x = (mouse.X) - (pointerDiff.x + oldGeom.width / 2);
 				w += oldx - x;
 				if (w < minSize) {
@@ -203,15 +176,15 @@ private:
 					w += minSize - w;
 				}
 
-			} else if (column == GridPos.Second) {
+			} else if (gridPos.x == PositionPart.Second) {
 
-			} else /*if (column == GridPos.Third) */ {
+			} else /*if (gridPos.x == PositionPart.Third) */ {
 				w = (mouse.X - oldGeom.x) - (pointerDiff.x - oldGeom.width / 2);
 				if (w < minSize)
 					w += minSize - w;
 			}
-		} else /*if (row == GridPos.Third) */ {
-			if (column == GridPos.First) {
+		} else /*if (gridPos.y == PositionPart.Third) */ {
+			if (gridPos.x == PositionPart.First) {
 				x = (mouse.X) - (pointerDiff.x + oldGeom.width / 2);
 				w += oldx - x;
 				if (w < minSize) {
@@ -222,11 +195,11 @@ private:
 				h = (mouse.Y - oldGeom.y) - (pointerDiff.y - oldGeom.height / 2);
 				if (h < minSize)
 					h += minSize - h;
-			} else if (column == GridPos.Second) {
+			} else if (gridPos.x == PositionPart.Second) {
 				h = (mouse.Y - oldGeom.y) - (pointerDiff.y - oldGeom.height / 2);
 				if (h < minSize)
 					h += minSize - h;
-			} else /*if (column == GridPos.Third) */ {
+			} else /*if (gridPos.x == PositionPart.Third) */ {
 				w = (mouse.X - oldGeom.x) - (pointerDiff.x - oldGeom.width / 2);
 				if (w < minSize)
 					w += minSize - w;

@@ -1,7 +1,6 @@
 module dwin.backend.layout;
 
-import std.container.array;
-import std.algorithm.searching;
+import dwin.backend.engine;
 import dwin.backend.container;
 import dwin.backend.mouse;
 
@@ -13,19 +12,25 @@ enum LayoutType {
 
 abstract class Layout : Container {
 public:
-	this() {
+	this(Engine engine) {
+		this.engine = engine;
 		visible = false;
 	}
 
 	override void Add(Container container) {
-		containers.insertBack(container);
+		containers ~= container;
 		container.Parent = this;
 	}
 
 	override void Remove(Container container) {
-		auto idx = containers[].countUntil(container);
-		assert(idx >= 0);
-		containers.linearRemove(containers[idx .. idx + 1]);
+		import std.algorithm.searching : countUntil;
+
+		const long idx = containers.countUntil(container);
+		if (idx == -1)
+			return;
+		for (ulong i = idx; i < containers.length - 1; i++) // container.length - 1 can't be underflow because the assert makes sure it's atleast 1
+			containers[i] = containers[i + 1];
+		containers.length--;
 	}
 
 	abstract void MouseMovePressed(Container target, Mouse mouse);
@@ -41,13 +46,13 @@ public:
 
 	override void Show(bool eventBased = true) {
 		visible = true;
-		foreach (container; containers)
+		foreach (container; Containers)
 			container.Show(eventBased);
 	}
 
 	override void Hide(bool eventBased = true) {
 		visible = false;
-		foreach (container; containers)
+		foreach (container; Containers)
 			container.Hide(eventBased);
 	}
 
@@ -71,7 +76,7 @@ public:
 	override void Focus() {
 	}
 
-	@property Array!Container Containers() {
+	@property Container[] Containers() {
 		return containers;
 	}
 
@@ -80,6 +85,7 @@ public:
 	}
 
 protected:
-	Array!Container containers;
+	Engine engine;
 	bool visible;
+	Container[] containers;
 }

@@ -1,5 +1,6 @@
 module dwin.backend.screen;
 
+import dwin.backend.engine;
 import dwin.backend.container;
 import dwin.backend.window;
 import dwin.backend.workspace;
@@ -8,16 +9,18 @@ import dwin.layout.floatinglayout;
 
 class Screen {
 public:
-	this(string name, short x, short y, ushort width, ushort height, Workspace[] workspaces = [new Workspace("Workspace1"),
-			new Workspace("Workspace2"), new Workspace("Workspace3")]) {
+	this(Engine engine, string name, short x, short y, ushort width, ushort height, Workspace[] workspaces = null) {
+		this.engine = engine;
 		this.name = name;
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		onTop = new FloatingLayout();
+		onTop = new FloatingLayout(engine);
 		onTop.MoveResize(x, y, width, height);
 		onTop.Show();
+		if (!workspaces)
+			workspaces = [new Workspace(engine, "Workspace1"), new Workspace(engine, "Workspace2"), new Workspace(engine, "Workspace3")];
 		this.workspaces = workspaces;
 		foreach (workspace; this.workspaces)
 			workspace.MoveResize(x, y, width, height);
@@ -39,6 +42,15 @@ public:
 
 	void RemoveOnTop(Container container) {
 		onTop.Remove(container);
+	}
+
+	void MoveResize(short x, short y, ushort width, ushort height) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		foreach (workspace; workspaces)
+			workspace.MoveResize(x, y, width, height);
 	}
 
 	@property ref string Name() {
@@ -74,10 +86,10 @@ public:
 
 		currentWorkspace = mod(currentWorkspace, workspaces.length);
 
+		workspaces[currentWorkspace].Show(false);
 		workspaces[this.currentWorkspace].Hide(false);
 		this.currentWorkspace = currentWorkspace;
 
-		workspaces[this.currentWorkspace].Show(false);
 		return this.currentWorkspace;
 	}
 
@@ -96,6 +108,7 @@ public:
 	}
 
 protected:
+	Engine engine;
 	string name;
 	short x;
 	short y;

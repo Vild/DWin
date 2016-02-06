@@ -1,24 +1,42 @@
 module dwin.backend.workspace;
 
+import dwin.backend.engine;
 import dwin.backend.container;
+import dwin.backend.window;
 import dwin.backend.layout;
 import dwin.layout.floatinglayout;
 import dwin.layout.tilinglayout;
 
 class Workspace {
 public:
-	this(string name) {
+	this(Engine engine, string name) {
+		this.engine = engine;
 		this.name = name;
-		onTop = new FloatingLayout();
-		root = new TilingLayout();
+		onTop = new FloatingLayout(engine);
+		root = new TilingLayout(engine);
 	}
 
 	void Add(Container container) {
+		if (auto window = cast(Window)container) {
+			window.Workspace = this;
+			activeWindow = window;
+		}
+
 		root.Add(container);
+
+		if (auto layout = cast(TilingLayout)root)
+			layout.ShouldDie();
 	}
 
 	void Remove(Container container) {
 		root.Remove(container);
+		if (auto window = cast(Window)container) {
+			window.Workspace = null;
+			if (activeWindow == window)
+				activeWindow = null;
+		}
+		if (auto layout = cast(TilingLayout)root)
+			layout.ShouldDie();
 	}
 
 	void AddOnTop(Container container) {
@@ -39,18 +57,6 @@ public:
 		root.Hide(eventBased);
 	}
 
-	@property ref string Name() {
-		return name;
-	}
-
-	@property Layout Root() {
-		return root;
-	}
-
-	@property FloatingLayout OnTop() {
-		return onTop;
-	}
-
 	void Move(short x, short y) {
 		onTop.Move(x, y);
 		root.Move(x, y);
@@ -66,8 +72,26 @@ public:
 		root.MoveResize(x, y, width, height);
 	}
 
+	@property ref string Name() {
+		return name;
+	}
+
+	@property Layout Root() {
+		return root;
+	}
+
+	@property FloatingLayout OnTop() {
+		return onTop;
+	}
+
+	@property ref Window ActiveWindow() {
+		return activeWindow;
+	}
+
 protected:
+	Engine engine;
 	string name;
 	Layout root;
 	FloatingLayout onTop;
+	Window activeWindow;
 }

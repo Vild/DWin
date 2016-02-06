@@ -31,9 +31,18 @@ public:
 	}
 
 	void Run() {
+		import core.thread : Thread;
+		import core.time : msecs;
+
 		quit = false;
-		while (!quit)
+		while (!quit) {
 			engine.DoEvent();
+			try {
+				Thread.sleep(10.msecs);
+			}
+			catch (Exception) {
+			}
+		}
 	}
 
 	@property.Engine Engine() {
@@ -62,19 +71,33 @@ private:
 		auto m = engine.Mouse;
 		m.Update();
 		auto scr = engine.FindScreen(m.X, m.Y);
-		window.Screen = scr;
 		window.Move(scr.X, scr.Y);
+		window.Screen = scr;
 		scr.Add(window);
 	}
 
 	void onRemoveWindow(Window window) {
 		log.Info("Remove Window: %s", window);
 
-		window.Parent.Remove(window);
+		auto scr = engine.FindScreen(window.X, window.Y);
+		scr.Remove(window);
 	}
 
 	void onRequestShowWindow(Window window) {
-		log.Info("Show: %s", window);
+		log.Info("Show: %s, Desktop: %s, IsDock: %s", window, window.Desktop == uint.max, window.IsDock);
+		if (window.Desktop == uint.max) {
+			auto scr = window.Screen;
+			scr.Remove(window);
+			scr.AddOnTop(window);
+			if (window.IsDock) {
+				log.Info("Window %s(%s) is now the dock! %s", window.Title, window.toString, window.Strut);
+				foreach (Screen s; engine.Screens) {
+					s.MoveResize(cast(short)(s.X + window.Strut.left), cast(short)(s.Y + window.Strut.top),
+							cast(ushort)(s.Width - window.Strut.left - window.Strut.right),
+							cast(ushort)(s.Height - window.Strut.top - window.Strut.bottom));
+				}
+			}
+		}
 		window.Parent.RequestShow(window);
 	}
 
@@ -130,7 +153,7 @@ private:
 
 		engine.OnMouseMotion ~= &onMouseMotion;
 
-		engine.BindManager.Map("Escape", delegate(bool v) { quit = true; });
+		engine.BindManager.Map("Ctrl + Alt + Shift + Escape", delegate(bool v) { quit = true; });
 
 		engine.BindManager.Map("Ctrl + Button1", delegate(bool v) {
 			auto m = engine.Mouse;
@@ -213,6 +236,24 @@ private:
 				window.Parent.Remove(window);
 				auto scr = window.Screen;
 				scr.Workspaces[scr.CurrentWorkspace].Add(window);
+			}
+		});
+
+		engine.BindManager.Map("Ctrl + x", delegate(bool v) {
+			if (v) {
+				auto m = engine.Mouse;
+				m.Update();
+				Window window = engine.FindWindow(m.X, m.Y);
+				log.Info("1: %s", window);
+				if (!window)
+					return;
+
+				import dwin.layout.tilinglayout;
+
+				log.Info("Trying to swap: %s", window.Parent);
+
+				if (auto layout = cast(TilingLayout)window.Parent)
+					layout.Swap();
 			}
 		});
 	}

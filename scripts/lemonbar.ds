@@ -1,0 +1,19 @@
+Info.AddCtor("lemonbar.ds", function() {
+	System.PipeProcess("lemonbar", "lemonbar -f 'DejaVu Sans Mono:size=24'"); //  -g x32
+	Engine.RegisterTick(lemonbar_tick);
+});
+
+function lemonbar_tick() {
+	var scrs = Engine.GetScreens();
+	var scr = scrs[0];
+	var cur = scr.CurrentWorkspace;
+	var wrks = scr.Workspaces;
+	var wrk = wrks[cur];
+
+	var title = "";
+	if (wrk.ActiveWindow)
+		title = wrk.ActiveWindow.Title;
+	var date = System.GetDate();
+
+	System.WritePipeProcess("lemonbar", "%{l}" ~ wrk.Name ~ "%{c}" ~ title ~ "%{r}" ~ date);
+}

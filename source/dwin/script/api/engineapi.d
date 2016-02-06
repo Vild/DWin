@@ -15,39 +15,16 @@ struct EngineAPI {
 		this.engine = engine;
 	}
 
-	/*var GetScreens(var, var[]) {
-		var screenArray = var.emptyArray;
-		var screen0 = var.emptyObject;
-		screen0.Name = "DUMMY0";
-
-		var screen0Workspace = var.emptyObject;
-		screen0Workspace.Name = "Derp";
-		var screen0Layout = var.emptyObject;
-		screen0Layout["Type"] = "DummyLayout";
-		screen0Layout.IsVisible = true;
-		screen0Layout.Containers = var.emptyArray;
-
-		var container0 = var.emptyObject;
-		container0.IsWindow = true;
-		container0["Title"] = "DummyTitle";
-		container0.IsVisible = true;
-		screen0Layout.Containers[0] = container0;
-
-		screen0Workspace.Root = screen0Layout;
-
-		screen0.OnTop = screen0Layout;
-		screen0.Workspaces = var.emptyArray;
-		screen0.Workspaces[0] = screen0Workspace;
-
-		screenArray[0] = screen0;
-		return screenArray;
-	}*/
-
 	var GetScreens(var, var[]) {
 		var screens = var.emptyArray;
 		foreach (screen; engine.Screens)
 			screens ~= createVar(screen);
 		return screens;
+	}
+
+	var RegisterTick(var, var[] args) {
+		engine.RegisterTick(() => cast(void)args[0]());
+		return var.emptyObject;
 	}
 
 	mixin ObjectWrapper;
@@ -57,6 +34,7 @@ private:
 	var createVar(Screen screen) {
 		var scr = var.emptyObject;
 		scr.Name = screen.Name;
+		scr.CurrentWorkspace = screen.CurrentWorkspace;
 		scr.OnTop = createVar(screen.OnTop);
 		scr.Workspaces = var.emptyArray;
 		foreach (workspace; screen.Workspaces)
@@ -69,6 +47,7 @@ private:
 		work.Name = workspace.Name;
 		work.OnTop = createVar(workspace.OnTop);
 		work.Root = createVar(workspace.Root);
+		work.ActiveWindow = createVar(workspace.ActiveWindow);
 		return work;
 	}
 
@@ -77,13 +56,13 @@ private:
 			return createVar(win);
 		else if (auto layout = cast(Layout)con)
 			return createVar(layout);
-		assert(0);
+		return var(null);
 	}
 
 	var createVar(Layout layout) {
 		var l = var.emptyObject;
 		l.IsWindow = false;
-		l["Type"] = typeid(layout).name;
+		l["ToString"] = layout.toString();
 		l.IsVisible = layout.IsVisible;
 		l.Containers = var.emptyArray;
 		foreach (container; layout.Containers)
@@ -92,9 +71,12 @@ private:
 	}
 
 	var createVar(Window window) {
+		if (!window)
+			return var.emptyObject;
 		var win = var.emptyObject;
 		win.IsWindow = true;
-		win.Title = window.Title;
+		win.Title = window.Title();
+		win["ToString"] = window.toString();
 		win.IsVisible = window.IsVisible;
 		return win;
 	}

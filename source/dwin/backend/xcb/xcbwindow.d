@@ -19,11 +19,6 @@ public:
 		Update();
 	}
 
-	~this() {
-		Unmap();
-		xcb_destroy_window(xcb.Connection, window);
-	}
-
 	@property override string Title() {
 		Update();
 		return title;
@@ -61,9 +56,68 @@ public:
 			xcb_icccm_get_text_property_reply_wipe(&icccm_txt_prop);
 		} else
 			title = "ERROR TITLE";
+
+		xcb_get_property_reply_t* reply = xcb_get_property_reply(xcb.Connection, xcb_get_property(xcb.Connection, 0,
+				window, xcb.LookupNETAtoms[xcb.NETAtoms.WMStrutPartial.id].atom, XCB_ATOM_CARDINAL, 0, 12), null);
+
+		if (reply) {
+			onlyStrutPartial = true;
+			scope (exit)
+				xcb_free(reply);
+			uint* data = cast(uint*)xcb_get_property_value(reply);
+			strut = .Strut(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11]);
+		} else if (!onlyStrutPartial) {
+			reply = xcb_get_property_reply(xcb.Connection, xcb_get_property(xcb.Connection, 0, window,
+					xcb.LookupNETAtoms[xcb.NETAtoms.WMStrut.id].atom, XCB_ATOM_CARDINAL, 0, 4), null);
+			if (reply) {
+				scope (exit)
+					xcb_free(reply);
+				uint* data = cast(uint*)xcb_get_property_value(reply);
+				strut = .Strut(data[0], data[1], data[2], data[3]);
+			}
+		}
+
+		reply = xcb_get_property_reply(xcb.Connection, xcb_get_property(xcb.Connection, 0, window,
+				xcb.EWMH._NET_WM_DESKTOP, XCB_ATOM_CARDINAL, 0, 1), null);
+		if (reply) {
+			scope (exit)
+				xcb_free(reply);
+
+			uint* data = cast(uint*)xcb_get_property_value(reply);
+			desktop = *data;
+		}
+
+		reply = xcb_get_property_reply(xcb.Connection, xcb_get_property(xcb.Connection, 0, window,
+				xcb.EWMH._NET_WM_WINDOW_TYPE, XCB_ATOM_ATOM, 0, uint.max), null);
+		if (reply) {
+			scope (exit)
+				xcb_free(reply);
+
+			int length = xcb_get_property_value_length(reply);
+			uint* data = cast(uint*)xcb_get_property_value(reply);
+			windowTypes.length = 0;
+			foreach (type; data[0 .. length])
+				windowTypes ~= type;
+		}
+
+		reply = xcb_get_property_reply(xcb.Connection, xcb_get_property(xcb.Connection, 0, window,
+				xcb.EWMH._NET_WM_STATE, XCB_ATOM_ATOM, 0, uint.max), null);
+		if (reply) {
+			scope (exit)
+				xcb_free(reply);
+
+			int length = xcb_get_property_value_length(reply);
+			uint* data = cast(uint*)xcb_get_property_value(reply);
+			states.length = 0;
+			foreach (s; data[0 .. length])
+				states ~= s;
+		}
+
 	}
 
 	override void Move(short x, short y) {
+		if (IsSticky)
+			return;
 		this.x = x;
 		this.y = y;
 		uint[] data = [x, y];
@@ -71,6 +125,8 @@ public:
 	}
 
 	override void Resize(ushort width, ushort height) {
+		if (IsSticky)
+			return;
 		this.width = width;
 		this.height = height;
 		uint[] data = [width, height];
@@ -78,6 +134,8 @@ public:
 	}
 
 	override void MoveResize(short x, short y, ushort width, ushort height) {
+		if (IsSticky)
+			return;
 		uint[] data = [x, y, width, height];
 		xcb_configure_window(xcb.Connection, window,
 				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
@@ -135,11 +193,19 @@ public:
 	}
 
 	void Map() {
+		uint values_off = xcb.RootEventMask & ~XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY;
+		uint values_on = xcb.RootEventMask;
+		xcb_change_window_attributes(xcb.Connection, xcb.Root.InternalWindow, XCB_CW_EVENT_MASK, &values_off);
 		xcb_map_window(xcb.Connection, window);
+		xcb_change_window_attributes(xcb.Connection, xcb.Root.InternalWindow, XCB_CW_EVENT_MASK, &values_on);
 	}
 
 	void Unmap() {
+		uint values_off = xcb.RootEventMask & ~XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY;
+		uint values_on = xcb.RootEventMask;
+		xcb_change_window_attributes(xcb.Connection, xcb.Root.InternalWindow, XCB_CW_EVENT_MASK, &values_off);
 		xcb_unmap_window(xcb.Connection, window);
+		xcb_change_window_attributes(xcb.Connection, xcb.Root.InternalWindow, XCB_CW_EVENT_MASK, &values_on);
 	}
 
 	void ChangeAttributes(uint mask, const uint* value) {
@@ -150,9 +216,32 @@ public:
 		return window;
 	}
 
+	@property xcb_atom_t[] WindowTypes() {
+		return windowTypes;
+	}
+
+	@property xcb_atom_t[] States() {
+		return states;
+	}
+
+	@property override bool IsDock() {
+		import std.algorithm.searching : canFind;
+
+		return windowTypes.canFind(xcb.EWMH._NET_WM_WINDOW_TYPE_DOCK);
+	}
+
+	@property override bool IsSticky() {
+		import std.algorithm.searching : canFind;
+
+		return states.canFind(xcb.EWMH._NET_WM_STATE_STICKY);
+	}
+
 private:
 	XCB xcb;
 	xcb_window_t window;
 	string title;
 	bool visible;
+	bool onlyStrutPartial;
+	xcb_atom_t[] windowTypes;
+	xcb_atom_t[] states;
 }
