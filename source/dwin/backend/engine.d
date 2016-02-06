@@ -81,7 +81,7 @@ public:
 	}
 
 	void RegisterTick(void delegate() cb) {
-		ticksCallbacks ~= cb;
+		tickCallbacks ~= cb;
 	}
 
 	@property.Mouse Mouse() {
@@ -144,7 +144,7 @@ protected:
 	.Mouse mouse;
 	.BindManager bindManager;
 
-	void delegate()[] ticksCallbacks;
+	void delegate()[] tickCallbacks;
 
 	Window root;
 	Screen[] screens;
