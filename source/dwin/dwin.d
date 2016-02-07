@@ -1,6 +1,8 @@
 module dwin.dwin;
 
+import std.container.array;
 import std.stdio;
+import std.process;
 
 import dwin.log;
 import dwin.event;
@@ -13,8 +15,6 @@ import dwin.backend.layout;
 import dwin.backend.workspace;
 import dwin.backend.container;
 
-import std.container.array;
-
 final class DWin {
 public:
 	this(int display) {
@@ -23,7 +23,7 @@ public:
 		log = Log.MainLogger();
 
 		engine = new XCB(display);
-		script = new Script(this);
+		script = new Script(this, getScriptFolder);
 
 		setup();
 		sigchld(0); // Ignore when children dies
@@ -65,6 +65,48 @@ private:
 		signal(SIGCHLD, &sigchld);
 		while (0 < waitpid(-1, null, WNOHANG)) {
 		}
+	}
+
+	/*
+
+*/
+
+	string getScriptFolder() {
+		import std.file : exists, thisExePath;
+		import std.array : split, join;
+		import std.string : startsWith;
+		import std.path : dirName;
+
+		environment["DWIN_EXEPATH"] = thisExePath.dirName;
+
+		//dfmt off
+		static string[] searchPaths = [
+			"$PWD/.dwin/scripts/",
+			"$XDG_CONFIG_HOME/dwin/scripts/",
+			"$HOME/.dwin/scripts/",
+			"$DWIN_EXEPATH/scripts/",
+			"/usr/share/dwin/scripts/"
+		];
+		//dfmt on
+
+		foreach (path; searchPaths) {
+			string[] part = path.split("/");
+
+			foreach (ref p; part) {
+				if (p.startsWith("$"))
+					p = environment.get(p[1 .. $]);
+			}
+
+			path = part.join("/");
+
+			log.Info("Checking for script folder: %s", path);
+
+			if (exists(path))
+				return path;
+		}
+
+		log.Fatal("Could not find a script folder!");
+		assert(0);
 	}
 
 	void onNewWindow(Window window) {

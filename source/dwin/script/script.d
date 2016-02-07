@@ -13,10 +13,13 @@ import dwin.log;
 
 class Script {
 public:
-	this(DWin dwin) {
-		engineAPI.Init(dwin.Engine);
-		logAPI.Init();
+	this(DWin dwin, string scriptFolder) {
+		this.scriptFolder = scriptFolder;
+
 		bindManagerAPI.Init(dwin.Engine.BindManager);
+		engineAPI.Init(dwin.Engine);
+		ioAPI.Init(scriptFolder);
+		logAPI.Init();
 
 		env = var.emptyObject;
 		env.BindManager = bindManagerAPI.Get();
@@ -27,7 +30,7 @@ public:
 		env.Log = logAPI.Get();
 		env.System = systemAPI.Get();
 
-		foreach (file; dirEntries("scripts/", SpanMode.breadth).filter!(f => f.name.endsWith(".ds"))) {
+		foreach (file; dirEntries(scriptFolder, SpanMode.breadth).filter!(f => f.name.endsWith(".ds"))) {
 			Log.MainLogger.Info("Loading script: %s", file);
 			runFile(File(file, "r"));
 		}
@@ -69,7 +72,12 @@ public:
 		run(line);
 	}
 
+	@property string ScriptFolder() {
+		return scriptFolder;
+	}
+
 private:
+	string scriptFolder;
 	var env;
 
 	BindManagerAPI bindManagerAPI;
