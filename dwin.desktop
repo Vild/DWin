@@ -1,0 +1,6 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=dwin
+Comment=A dynamic window manager written in D
+Exec=dwin
+Type=Application
