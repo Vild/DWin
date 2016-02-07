@@ -16,7 +16,6 @@ class Config {
 			var split = Data.Split(val);
 
 			var args = Data.Join(split[1 .. $], " ");
-			Log.Info("Binding ", key, ", args: ", args);
 
 			if (split[0] == "exec")
 				BindManager.Map(key, function(var pressed) {

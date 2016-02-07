@@ -3,6 +3,8 @@ Info.AddCtor("lemonbar.ds", function() {
 	Engine.RegisterTick(lemonbar_tick);
 });
 
+var lemonbar_cache;
+
 function lemonbar_tick() {
 	var scrs = Engine.GetScreens();
 	var scr = scrs[0];
@@ -15,5 +17,9 @@ function lemonbar_tick() {
 		title = wrk.ActiveWindow.Title;
 	var date = System.GetDate();
 
-	System.WritePipeProcess("lemonbar", "%{l}" ~ wrk.Name ~ "%{c}" ~ title ~ "%{r}" ~ date);
+	var output = "%{l}" ~ wrk.Name ~ "%{c}" ~ title ~ "%{r}" ~ date;
+	if (output != lemonbar_cache) {
+		System.WritePipeProcess("lemonbar", output);
+		lemonbar_cache = output;
+	}
 }
