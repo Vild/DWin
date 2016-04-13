@@ -1,6 +1,6 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=dwin
+Name=DWin
 Comment=A dynamic window manager written in D
-Exec=dwin
-Type=Application
+Exec=/usr/bin/dwin -n -d 0
+Type=XSession

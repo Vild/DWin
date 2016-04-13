@@ -121,8 +121,9 @@ private:
 	void onRemoveWindow(Window window) {
 		log.Info("Remove Window: %s", window);
 
-		auto scr = engine.FindScreen(window.X, window.Y);
-		scr.Remove(window);
+		//auto scr = engine.FindScreen(window.X, window.Y);
+		//scr.Remove(window);
+		window.Parent.Remove(window);
 	}
 
 	void onRequestShowWindow(Window window) {

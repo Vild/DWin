@@ -233,7 +233,13 @@ public:
 	@property override bool IsSticky() {
 		import std.algorithm.searching : canFind;
 
-		return states.canFind(xcb.EWMH._NET_WM_STATE_STICKY);
+		return states.canFind(xcb.EWMH._NET_WM_STATE_STICKY) ||
+		states.canFind(xcb.EWMH._NET_WM_WINDOW_TYPE_TOOLBAR) ||
+		states.canFind(xcb.EWMH._NET_WM_WINDOW_TYPE_MENU) ||
+		states.canFind(xcb.EWMH._NET_WM_WINDOW_TYPE_SPLASH) ||
+		states.canFind(xcb.EWMH._NET_WM_WINDOW_TYPE_TOOLTIP) ||
+		states.canFind(xcb.EWMH._NET_WM_WINDOW_TYPE_NOTIFICATION)
+		;
 	}
 
 private:

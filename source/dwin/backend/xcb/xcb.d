@@ -111,6 +111,22 @@ public:
 
 			log.Debug("notify: %s", *notify);
 
+			auto reply = xcb_get_atom_name_reply(connection, xcb_get_atom_name(connection, notify.atom), null);
+			if (reply) {
+				auto length = xcb_get_atom_name_name_length(reply);
+				auto name = xcb_get_atom_name_name(reply);
+
+				log.Debug("\tAtom: %s", name[0 .. length]);
+			}
+
+			/*foreach (wmAtom; EnumMembers!WMAtoms)
+				if (lookupWMAtoms[wmAtom.id] == notify.atom)
+					log.Debug("\t WMAtom: %s", wmAtom.name);
+
+			foreach (netAtom; EnumMembers!NETAtoms)
+				if (lookupNETAtoms[netAtom.id] == notify.atom)
+					log.Debug("\t NETAtom: %s", netAtom.name);*/
+
 			Window window = findWindow(notify.window);
 			if (window)
 				window.Update();
