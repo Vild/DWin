@@ -1,32 +1,33 @@
-module dwin.backend.xcb.xcbbindmanager;
+module dwin.backend.xcb.keyboard;
 
 import xcb.xcb;
 import xcb.xproto;
 import xcb.keysyms;
 
-import dwin.backend.xcb.xcb;
+import dwin.backend.xcb.engine;
 import dwin.backend.xcb.keyparser;
-import dwin.backend.bindmanager;
+import dwin.backend.xcb.root;
+import dwin.io.keyboard;
 
 import dwin.log;
 
-final class XCBBindManager : BindManager {
+final class XCBKeyboard : Keyboard {
 public:
-	this(XCB xcb) {
-		this.xcb = xcb;
+	this(XCBEngine engine) {
+		this.engine = engine;
 		keyParser = new XCBKeyParser();
 		Rebind();
 	}
 
 	override void Rebind() {
-		(cast(XCBKeyParser)keyParser).Refresh(xcb);
+		(cast(XCBKeyParser)keyParser).Refresh(engine);
 		immutable uint[] modifiers = [0, XCB_MOD_MASK_LOCK, keyParser.NumlockMask, keyParser.NumlockMask | XCB_MOD_MASK_LOCK];
 
 		ungrabKey(XCB_GRAB_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
 		ungrabButton(cast(MouseButton)XCB_BUTTON_INDEX_ANY, cast(Modifier)XCB_MOD_MASK_ANY);
 		foreach (keyBind, func; mappings) {
 			if (keyBind.mouseButton == MouseButton.None) {
-				xcb_keycode_t* code = xcb_key_symbols_get_keycode(xcb.Symbols, keyBind.key);
+				xcb_keycode_t* code = xcb_key_symbols_get_keycode(engine.Symbols, keyBind.key);
 				if (!code)
 					continue;
 
@@ -41,7 +42,6 @@ public:
 							cast(Modifier)(keyBind.modifier | mod));
 			}
 		}
-		xcb.Flush();
 	}
 
 	override void Map(KeyBind keyBind, MapBind func) {
@@ -64,14 +64,14 @@ public:
 	}
 
 	void HandleKeyPressEvent(xcb_key_press_event_t* e) {
-		xcb_keysym_t key = xcb_key_press_lookup_keysym(xcb.Symbols, e, 0);
+		xcb_keysym_t key = xcb_key_press_lookup_keysym(engine.Symbols, e, 0);
 		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)), Key(key), MouseButton.None);
 		if (auto map = keyBind in mappings)
 			(*map)(true);
 	}
 
 	void HandleKeyReleaseEvent(xcb_key_release_event_t* e) {
-		xcb_keysym_t key = xcb_key_press_lookup_keysym(xcb.Symbols, e, 0);
+		xcb_keysym_t key = xcb_key_press_lookup_keysym(engine.Symbols, e, 0);
 		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)), Key(key), MouseButton.None);
 		if (auto map = keyBind in mappings)
 			(*map)(false);
@@ -81,7 +81,7 @@ public:
 		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)),
 				keyParser.ParseKey("None"), cast(MouseButton)e.detail);
 
-		xcb.Mouse.Set(e.root_x, e.root_y);
+		engine.MouseMgr.Set(e.root_x, e.root_y);
 		if (auto map = keyBind in mappings)
 			(*map)(true);
 	}
@@ -90,20 +90,20 @@ public:
 		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)),
 				keyParser.ParseKey("None"), cast(MouseButton)e.detail);
 
-		xcb.Mouse.Set(e.root_x, e.root_y);
+		engine.MouseMgr.Set(e.root_x, e.root_y);
 		if (auto map = keyBind in mappings)
 			(*map)(false);
 	}
 
 private:
-	XCB xcb;
+	XCBEngine engine;
 
 	auto grabKey(bool owner_events, Modifier modifiers, xcb_keycode_t key, ubyte pointerMode, ubyte keyboardMode) {
 		//dfmt off
 		return xcb_grab_key(
-			xcb.Connection,
+			engine.Connection,
 			owner_events,
-			xcb.Root.InternalWindow,
+			(cast(XCBRoot)engine.RootDisplay).InternalWindow,
 			modifiers,
 			key,
 			pointerMode,
@@ -115,9 +115,9 @@ private:
 	auto ungrabKey(xcb_keycode_t key, Modifier modifiers) {
 		//dfmt off
 		return xcb_ungrab_key(
-			xcb.Connection,
+			engine.Connection,
 			key,
-			xcb.Root.InternalWindow,
+			(cast(XCBRoot)engine.RootDisplay).InternalWindow,
 			modifiers
 		);
 		//dfmt on
@@ -127,13 +127,13 @@ private:
 			MouseButton button, Modifier modifiers) {
 		//dfmt off
 		return xcb_grab_button(
-			xcb.Connection,
+			engine.Connection,
 			owner_events,
-			xcb.Root.InternalWindow,
+			(cast(XCBRoot)engine.RootDisplay).InternalWindow,
 			event_mask,
 			pointerMode,
 			keyboardMode,
-			xcb.Root.InternalWindow,
+			(cast(XCBRoot)engine.RootDisplay).InternalWindow,
 			cursor,
 			button,
 			modifiers
@@ -142,7 +142,7 @@ private:
 	}
 
 	auto ungrabButton(MouseButton button, Modifier modifiers) {
-		return xcb_ungrab_button(xcb.Connection, button, xcb.Root.InternalWindow, modifiers);
+		return xcb_ungrab_button(engine.Connection, button, (cast(XCBRoot)engine.RootDisplay).InternalWindow, modifiers);
 	}
 
 }

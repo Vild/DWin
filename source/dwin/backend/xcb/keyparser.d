@@ -2,8 +2,8 @@ module dwin.backend.xcb.keyparser;
 
 import xcb.xcb;
 import xcb.keysyms;
-import dwin.backend.xcb.xcb;
-import dwin.backend.bindmanager;
+import dwin.backend.xcb.engine;
+import dwin.io.keyboard;
 import dwin.log;
 
 import std.string;
@@ -14,9 +14,9 @@ private alias ParseKey = keyParser.ParseKey;
 
 class XCBKeyParser : IKeyParser {
 public:
-	void Refresh(XCB xcb) {
-		refreshNumlockMask(xcb);
-		refreshModifiers(xcb);
+	void Refresh(XCBEngine engine) {
+		refreshNumlockMask(engine);
+		refreshModifiers(engine);
 	}
 
 	override Key ParseKey(string key) {
@@ -59,10 +59,10 @@ private:
 	uint numlockMask;
 	uint mouseMasks = XCB_KEY_BUT_MASK_BUTTON_1 + XCB_KEY_BUT_MASK_BUTTON_2 + XCB_KEY_BUT_MASK_BUTTON_3
 		+ XCB_KEY_BUT_MASK_BUTTON_4 + XCB_KEY_BUT_MASK_BUTTON_5;
-	void refreshNumlockMask(XCB xcb) {
+	void refreshNumlockMask(XCBEngine engine) {
 		numlockMask = 0; //; // Removes mouse buttons flags
-		xcb_get_modifier_mapping_reply_t* reply = xcb_get_modifier_mapping_reply(xcb.Connection,
-				xcb_get_modifier_mapping(xcb.Connection), null);
+		xcb_get_modifier_mapping_reply_t* reply = xcb_get_modifier_mapping_reply(engine.Connection,
+				xcb_get_modifier_mapping(engine.Connection), null);
 		if (!reply)
 			return;
 		scope (exit)
@@ -70,7 +70,7 @@ private:
 
 		xcb_keycode_t* codes = xcb_get_modifier_mapping_keycodes(reply);
 		enum XK_Num_Lock = 0xff7f; //TODO: FIX THIS
-		xcb_keycode_t* target = xcb_key_symbols_get_keycode(xcb.Symbols, XK_Num_Lock);
+		xcb_keycode_t* target = xcb_key_symbols_get_keycode(engine.Symbols, XK_Num_Lock);
 
 		if (!target)
 			return;
@@ -81,34 +81,34 @@ private:
 					numlockMask |= (1 << i);
 	}
 
-	void refreshModifiers(XCB xcb) {
+	void refreshModifiers(XCBEngine engine) {
 		modifiers = null;
 		//dfmt off
 		xcb_keycode_t*[string] mods = [
-			"Shift_L".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Shift_L".ParseKey),
-			"Shift_R".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Shift_R".ParseKey),
-			"Control_L".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Control_L".ParseKey),
-			"Control_R".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Control_R".ParseKey),
-			"Meta_L".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Meta_L".ParseKey),
-			"Meta_R".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Meta_R".ParseKey),
-			"Alt_L".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Alt_L".ParseKey),
-			"Alt_R".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Alt_R".ParseKey),
-			"Super_L".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Super_L".ParseKey),
-			"Super_R".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Super_R".ParseKey),
-			"Hyper_L".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Hyper_L".ParseKey),
-			"Hyper_R".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Hyper_R".ParseKey),
+			"Shift_L".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Shift_L".ParseKey),
+			"Shift_R".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Shift_R".ParseKey),
+			"Control_L".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Control_L".ParseKey),
+			"Control_R".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Control_R".ParseKey),
+			"Meta_L".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Meta_L".ParseKey),
+			"Meta_R".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Meta_R".ParseKey),
+			"Alt_L".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Alt_L".ParseKey),
+			"Alt_R".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Alt_R".ParseKey),
+			"Super_L".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Super_L".ParseKey),
+			"Super_R".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Super_R".ParseKey),
+			"Hyper_L".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Hyper_L".ParseKey),
+			"Hyper_R".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Hyper_R".ParseKey),
 
-			"Caps_Lock".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Caps_Lock".ParseKey),
-			"Shift_Lock".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Shift_Lock".ParseKey),
-			"Num_Lock".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Num_Lock".ParseKey),
-			"Scroll_Lock".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Scroll_Lock".ParseKey),
+			"Caps_Lock".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Caps_Lock".ParseKey),
+			"Shift_Lock".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Shift_Lock".ParseKey),
+			"Num_Lock".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Num_Lock".ParseKey),
+			"Scroll_Lock".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Scroll_Lock".ParseKey),
 
-			"Mode_switch".toLower : xcb_key_symbols_get_keycode(xcb.Symbols, "Mode_switch".ParseKey)
+			"Mode_switch".toLower : xcb_key_symbols_get_keycode(engine.Symbols, "Mode_switch".ParseKey)
 		];
 		//dfmt on
 
-		xcb_get_modifier_mapping_reply_t* modmapReply = xcb_get_modifier_mapping_reply(xcb.Connection,
-				xcb_get_modifier_mapping(xcb.Connection), null);
+		xcb_get_modifier_mapping_reply_t* modmapReply = xcb_get_modifier_mapping_reply(engine.Connection,
+				xcb_get_modifier_mapping(engine.Connection), null);
 		if (!modmapReply)
 			return;
 

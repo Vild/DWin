@@ -1,4 +1,4 @@
-module dwin.backend.bindmanager;
+module dwin.io.keyboard;
 
 import dwin.log;
 
@@ -26,7 +26,7 @@ enum MouseButton : ubyte {
 	Button5
 }
 
-abstract class BindManager {
+abstract class Keyboard {
 	alias MapBind = void delegate(bool isPressed);
 	struct KeyBind {
 		Key key;

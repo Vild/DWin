@@ -3,23 +3,21 @@ module dwin.script.api.engineapi;
 import dwin.backend.engine;
 import dwin.script.utils;
 
-import dwin.backend.container;
-import dwin.backend.layout;
-import dwin.backend.screen;
-import dwin.backend.window;
-import dwin.backend.workspace;
-
 struct EngineAPI {
-
 	void Init(Engine engine) {
 		this.engine = engine;
 	}
 
-	var GetScreens(var, var[]) {
+	/*var GetScreens(var, var[]) {
 		var screens = var.emptyArray;
 		foreach (screen; engine.Screens)
 			screens ~= createVar(screen);
 		return screens;
+	}*/
+
+	var Quit(var, var[] args) {
+		engine.Quit = true;
+		return var.emptyObject;
 	}
 
 	var RegisterTick(var, var[] args) {
@@ -31,7 +29,7 @@ struct EngineAPI {
 	Engine engine;
 
 private:
-	var createVar(Screen screen) {
+	/*var createVar(Screen screen) {
 		var scr = var.emptyObject;
 		scr.Name = screen.Name;
 		scr.CurrentWorkspace = screen.CurrentWorkspace;
@@ -79,5 +77,5 @@ private:
 		win["ToString"] = window.toString();
 		win.IsVisible = window.IsVisible;
 		return win;
-	}
+	}*/
 }

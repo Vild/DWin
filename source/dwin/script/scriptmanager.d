@@ -1,33 +1,38 @@
-module dwin.script.script;
+module dwin.script.scriptmanager;
 
 import std.stdio;
 import std.file;
 import std.string;
 import std.algorithm.iteration;
-import dwin.dwin;
+import dwin.backend.engine;
 import arsd.script;
 public import dwin.script.utils;
 
 import dwin.script.api;
 import dwin.log;
 
-class Script {
+class ScriptManager {
 public:
-	this(DWin dwin, string scriptFolder) {
+	this() {
+	}
+
+	void Init(Engine engine, string scriptFolder) {
 		this.scriptFolder = scriptFolder;
 
-		bindManagerAPI.Init(dwin.Engine.BindManager);
-		engineAPI.Init(dwin.Engine);
+		engineAPI.Init(engine);
 		ioAPI.Init(scriptFolder);
+		keyboardAPI.Init(engine.KeyboardMgr);
 		logAPI.Init();
+		mouseAPI.Init(engine.MouseMgr);
 
 		env = var.emptyObject;
-		env.BindManager = bindManagerAPI.Get();
 		env.Data = dataAPI.Get();
 		env.Engine = engineAPI.Get();
 		env.Info = infoAPI.Get();
 		env.IO = ioAPI.Get();
+		env.Keyboard = keyboardAPI.Get();
 		env.Log = logAPI.Get();
+		env.Mouse = mouseAPI.Get();
 		env.System = systemAPI.Get();
 
 		foreach (file; dirEntries(scriptFolder, SpanMode.breadth).filter!(f => f.name.endsWith(".ds"))) {
@@ -64,7 +69,7 @@ public:
 			else {
 				//XXX: Hack to show why the function could not be called!
 				pragma(msg, callerFile, "(", callerLine,
-						",1): Error: Script Function: " ~ func ~ ", Unsupported argument type: " ~ typeof(arg).stringof);
+					",1): Error: Script Function: " ~ func ~ ", Unsupported argument type: " ~ typeof(arg).stringof);
 				static assert(0, "Unsupported argument type: " ~ typeof(arg).stringof);
 			}
 		}
@@ -80,12 +85,13 @@ private:
 	string scriptFolder;
 	var env;
 
-	BindManagerAPI bindManagerAPI;
 	DataAPI dataAPI;
 	EngineAPI engineAPI;
 	InfoAPI infoAPI;
 	IOAPI ioAPI;
+	KeyboardAPI keyboardAPI;
 	LogAPI logAPI;
+	MouseAPI mouseAPI;
 	SystemAPI systemAPI;
 
 	void run(string str) {

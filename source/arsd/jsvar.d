@@ -1225,7 +1225,7 @@ struct var {
 					string s = _this.toString();
 					import std.array : replace;
 
-					return var(std.array.replace(s, args[0].toString(), args[1].toString()));
+					return var(replace(s, args[0].toString(), args[1].toString()));
 				};
 
 				p._properties["replace"] = replaceFunction;

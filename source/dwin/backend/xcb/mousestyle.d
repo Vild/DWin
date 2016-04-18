@@ -1,22 +1,23 @@
-module dwin.backend.xcb.xcbmousestyle;
+module dwin.backend.xcb.mousestyle;
 
 import xcb.xcb;
 
-import dwin.backend.xcb.xcb;
-import dwin.backend.mousestyle;
+import dwin.backend.xcb.engine;
+import dwin.io.mouse;
+import dwin.backend.xcb.root;
 
 final class XCBMouseStyle : MouseStyle {
 public:
-	this(XCB xcb, XCBMouseIcons icon) {
+	this(XCBEngine engine, XCBMouseIcons icon) {
 		import std.string : toStringz;
 
-		this.xcb = xcb;
-		font = xcb_generate_id(xcb.Connection);
-		xcb_open_font(xcb.Connection, font, 6, "cursor".toStringz);
+		this.engine = engine;
+		font = xcb_generate_id(engine.Connection);
+		xcb_open_font(engine.Connection, font, 6, "cursor".toStringz);
 
-		cursor = xcb_generate_id(xcb.Connection);
+		cursor = xcb_generate_id(engine.Connection);
 		//dfmt off
-		xcb_create_glyph_cursor(xcb.Connection,
+		xcb_create_glyph_cursor(engine.Connection,
 			cursor,
 			font,
 			font,
@@ -29,12 +30,12 @@ public:
 	}
 
 	~this() {
-		xcb_free_cursor(xcb.Connection, cursor);
-		xcb_close_font(xcb.Connection, font);
+		xcb_free_cursor(engine.Connection, cursor);
+		xcb_close_font(engine.Connection, font);
 	}
 
 	override void Apply() {
-		xcb.Root.ChangeAttributes(XCB_CW_CURSOR, &cursor);
+		xcb_change_window_attributes(engine.Connection, (cast(XCBRoot)engine.RootDisplay).InternalWindow, XCB_CW_CURSOR, &cursor);
 	}
 
 	@property xcb_cursor_t Cursor() {
@@ -42,7 +43,7 @@ public:
 	}
 
 private:
-	XCB xcb;
+	XCBEngine engine;
 	xcb_font_t font;
 	xcb_cursor_t cursor;
 }

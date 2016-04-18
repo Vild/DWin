@@ -1,6 +1,8 @@
-module dwin.backend.mouse;
+module dwin.io.mouse;
 
-import dwin.backend.mousestyle;
+abstract class MouseStyle {
+	abstract void Apply();
+}
 
 enum MouseStyles {
 	Normal,
