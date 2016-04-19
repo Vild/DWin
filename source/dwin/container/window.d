@@ -10,6 +10,18 @@ public:
 		super(name, geom, parent, borderStyle, splitRatio);
 	}
 
+	abstract void Show() {
+		visible = true;
+	}
+	
+	abstract void Hide() {
+		visible = false;
+	}
+
+	@property bool Visible() {
+		return visible;
+	}
+	
 private:
 	//string class_;
 	//string instance;

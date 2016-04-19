@@ -15,6 +15,8 @@ import dwin.backend.xcb.errorcode;
 import dwin.backend.xcb.root;
 import dwin.backend.xcb.mouse;
 import dwin.backend.xcb.keyboard;
+import dwin.backend.xcb.window;
+import dwin.logic.logiccore;
 
 class XCBEngine : Engine {
 public:
@@ -102,18 +104,48 @@ public:
 			break;
 
 		case XCB_CREATE_NOTIFY:
+			auto notify = cast(xcb_create_notify_event_t*)e;
+			auto window = new XCBWindow(this, notify.window);
+			uint values = XCB_EVENT_MASK_PROPERTY_CHANGE | XCB_EVENT_MASK_ENTER_WINDOW;
+			xcb_change_window_attributes(con, notify.window, XCB_CW_EVENT_MASK, &values);
+
+			log.Error("CreateNotify: %s %s", *notify, window);
+			windows ~= window;
+			logicCore.NewWindow(window);
 			break;
 
 		case XCB_DESTROY_NOTIFY:
+			auto notify = cast(xcb_destroy_notify_event_t*)e;
+
+			ulong idx;
+			auto window = findWindow(notify.window, &idx);
+			if (!window)
+				break;
+			log.Error("DestroyNotify: %s %s", *notify, window);
+			logicCore.RemoveWindow(window);
+			window.destroy;
+			for (size_t i = idx; i < windows.length - 1; i++)
+				windows[i] = windows[i + 1];
+			windows.length--;
 			break;
 
 		case XCB_MAP_NOTIFY:
 			break;
 
 		case XCB_MAP_REQUEST:
+			auto map = cast(xcb_map_request_event_t*)e;
+			auto window = findWindow(map.window);
+			log.Error("MapRequest: %s %s", *map, window);
+			if (window)
+				logicCore.ShowWindow(window);
 			break;
 
 		case XCB_UNMAP_NOTIFY:
+			auto unmap = cast(xcb_unmap_notify_event_t*)e;
+			auto window = findWindow(unmap.window);
+			log.Error("UnmapNotify: %s %s", *unmap, window);
+			if (window)
+				logicCore.WindowHidden(window);
 			break;
 
 		case XCB_CONFIGURE_NOTIFY:
@@ -137,7 +169,7 @@ public:
 	@property xcb_key_symbols_t* Symbols() {
 		return symbols;
 	}
-
+	
 private:
 	enum connectionError {
 		Error = 1,
@@ -161,7 +193,7 @@ private:
 	xcb_screen_t* screen;
 	xcb_key_symbols_t* symbols;
 	xcb_ewmh_connection_t ewmhCon;
-
+	
 	xcb_screen_t* getScreen(int screen) {
 		for (auto it = xcb_setup_roots_iterator(xcb_get_setup(con)); it.rem; --screen, xcb_screen_next(&it))
 			if (screen == 0)
@@ -187,6 +219,18 @@ private:
 		}
 	}
 
+	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
+		foreach (i, win; windows)
+			if (auto window = cast(XCBWindow)win)
+				if (window.InternalWindow == id) {
+					if (idx != null)
+						*idx = i;
+					return window;
+				}
+
+		return null;
+	}
+	
 	void setup() {
 
 	}

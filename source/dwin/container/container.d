@@ -13,6 +13,10 @@ public:
 		this.splitRatio = splitRatio;
 	}
 
+	abstract void Update() {
+		oldGeom = geom;
+	}
+	
 	@property ref string Name() {
 		return name;
 	}
@@ -36,11 +40,7 @@ public:
 	@property bool DirtyGeometry() {
 		return geom != oldGeom;
 	}
-
-	@property abstract void Update() {
-		oldGeom = geom;
-	}
-
+	
 protected:
 	string name;
 	Geometry geom;

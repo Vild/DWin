@@ -2,10 +2,11 @@ module dwin.backend.engine;
 
 import dwin.log;
 import dwin.container.root;
-
+import dwin.container.window;
 import dwin.script.scriptmanager;
 import dwin.io.mouse;
 import dwin.io.keyboard;
+import dwin.logic.logiccore;
 
 abstract class Engine {
 public:
@@ -17,6 +18,8 @@ public:
 	}
 
 	void RunLoop() {
+		assert(logicCore);
+
 		scriptMgr.Init(this, scriptFolder);
 		scriptMgr.RunCtors();
 		import core.thread : Thread;
@@ -47,6 +50,10 @@ public:
 		return quit;
 	}
 
+	@property ref ILogicCore Logic() {
+		return logicCore;
+	}
+	
 	@property ScriptManager ScriptMgr() {
 		return scriptMgr;
 	}
@@ -62,15 +69,18 @@ public:
 	@property Keyboard KeyboardMgr() {
 		return keyboard;
 	}
-
+	
 protected:
 	string scriptFolder;
 	Log log;
 	bool quit;
 	void delegate()[] tickCallbacks;
 
+	ILogicCore logicCore;
 	ScriptManager scriptMgr;
 	Root root;
 	Mouse mouse;
 	Keyboard keyboard;
+
+	Window[] windows;
 }
