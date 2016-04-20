@@ -3,6 +3,7 @@ module dwin.backend.xcb.root;
 import xcb.xcb;
 
 import dwin.container.root;
+import dwin.container.screen;
 import dwin.backend.xcb.engine;
 import dwin.data.geometry;
 
@@ -23,10 +24,8 @@ public:
 			xcb_free(geom);
 		}
 		super(g);
-	}
 
-	@property override void Update() {
-		super.Update();
+		screens ~= new Screen("Root", g, this);
 	}
 
 	@property xcb_window_t InternalWindow() {

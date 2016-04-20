@@ -13,7 +13,7 @@ public:
 	abstract void Show() {
 		visible = true;
 	}
-	
+
 	abstract void Hide() {
 		visible = false;
 	}
@@ -21,7 +21,7 @@ public:
 	@property bool Visible() {
 		return visible;
 	}
-	
+
 private:
 	//string class_;
 	//string instance;

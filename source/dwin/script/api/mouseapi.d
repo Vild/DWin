@@ -7,12 +7,13 @@ import dwin.io.mouse;
 struct MouseAPI {
 	void Init(Mouse mouse) {
 		import std.traits : EnumMembers;
+
 		this.mouse = mouse;
 
 		Styles = var.emptyObject;
 
 		foreach (i, member; EnumMembers!MouseStyles)
-			mixin("Styles." ~ __traits(allMembers, MouseStyles)[i] ~ " = var(cast(int)"~member.stringof~");");
+			mixin("Styles." ~ __traits(allMembers, MouseStyles)[i] ~ " = var(cast(int)" ~ member.stringof ~ ");");
 	}
 
 	var Move(var, var[] args) {
@@ -35,6 +36,7 @@ struct MouseAPI {
 	var Style(var, var[] args) {
 		int styleID = cast(int)args[0];
 		import std.format : format;
+
 		assert(MouseStyles.min <= styleID && styleID <= MouseStyles.max, format("ID = %d", styleID));
 		mouse.Style(cast(MouseStyles)styleID);
 		return var.emptyObject;

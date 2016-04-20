@@ -19,8 +19,8 @@ public:
 	}
 
 	override void Update() {
-		xcb_query_pointer_reply_t* reply = xcb_query_pointer_reply(engine.Connection, xcb_query_pointer(engine.Connection,
-				(cast(XCBRoot)engine.RootDisplay).InternalWindow), null);
+		xcb_query_pointer_reply_t* reply = xcb_query_pointer_reply(engine.Connection,
+			xcb_query_pointer(engine.Connection, (cast(XCBRoot)engine.RootContainer).InternalWindow), null);
 
 		x = reply.root_x;
 		y = reply.root_y;
@@ -35,7 +35,7 @@ public:
 	}
 
 	override void Move(short x, short y) {
-		xcb_warp_pointer(engine.Connection, XCB_NONE, (cast(XCBRoot)engine.RootDisplay).InternalWindow, 0, 0, 0, 0, x, y);
+		xcb_warp_pointer(engine.Connection, XCB_NONE, (cast(XCBRoot)engine.RootContainer).InternalWindow, 0, 0, 0, 0, x, y);
 	}
 
 private:

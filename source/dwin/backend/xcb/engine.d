@@ -169,7 +169,7 @@ public:
 	@property xcb_key_symbols_t* Symbols() {
 		return symbols;
 	}
-	
+
 private:
 	enum connectionError {
 		Error = 1,
@@ -193,7 +193,7 @@ private:
 	xcb_screen_t* screen;
 	xcb_key_symbols_t* symbols;
 	xcb_ewmh_connection_t ewmhCon;
-	
+
 	xcb_screen_t* getScreen(int screen) {
 		for (auto it = xcb_setup_roots_iterator(xcb_get_setup(con)); it.rem; --screen, xcb_screen_next(&it))
 			if (screen == 0)
@@ -230,7 +230,7 @@ private:
 
 		return null;
 	}
-	
+
 	void setup() {
 
 	}

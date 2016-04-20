@@ -11,6 +11,14 @@ abstract class Root : Container {
 		super("Root", size, null, BorderStyle(), 1.0);
 	}
 
+	override void Update() {
+		foreach (Screen s; screens)
+			s.Update();
+
+		foreach (Window w; stickyWindows)
+			w.Update();
+	}
+
 	@property ref Screen[] Screens() {
 		return screens;
 	}
@@ -19,7 +27,7 @@ abstract class Root : Container {
 		return stickyWindows;
 	}
 
-private:
+protected:
 	Screen[] screens;
 	Window[] stickyWindows;
 }

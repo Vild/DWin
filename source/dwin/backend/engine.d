@@ -31,6 +31,8 @@ public:
 				cb();
 			HandleEvent();
 
+			root.Update();
+
 			try {
 				Thread.sleep(100.msecs);
 			}
@@ -50,15 +52,15 @@ public:
 		return quit;
 	}
 
-	@property ref ILogicCore Logic() {
+	@property ref LogicCore Logic() {
 		return logicCore;
 	}
-	
+
 	@property ScriptManager ScriptMgr() {
 		return scriptMgr;
 	}
 
-	@property Root RootDisplay() {
+	@property Root RootContainer() {
 		return root;
 	}
 
@@ -69,14 +71,14 @@ public:
 	@property Keyboard KeyboardMgr() {
 		return keyboard;
 	}
-	
+
 protected:
 	string scriptFolder;
 	Log log;
 	bool quit;
 	void delegate()[] tickCallbacks;
 
-	ILogicCore logicCore;
+	LogicCore logicCore;
 	ScriptManager scriptMgr;
 	Root root;
 	Mouse mouse;

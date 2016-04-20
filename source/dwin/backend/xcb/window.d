@@ -21,7 +21,9 @@ public:
 		scope (exit)
 			super.Update();
 
-		//TODO: Send new cords to X11
+		uint[] data = [geom.x, geom.y, geom.width, geom.height];
+		xcb_configure_window(engine.Connection, window,
+			XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
 	}
 
 	override void Show() {
@@ -33,11 +35,11 @@ public:
 		super.Hide();
 		xcb_unmap_window(engine.Connection, window);
 	}
-	
+
 	@property xcb_window_t InternalWindow() {
 		return window;
 	}
-	
+
 private:
 	XCBEngine engine;
 	xcb_window_t window;

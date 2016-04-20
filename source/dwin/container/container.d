@@ -1,6 +1,7 @@
 module dwin.container.container;
 
 import dwin.data.geometry;
+import dwin.data.vec;
 import dwin.data.borderstyle;
 
 abstract class Container {
@@ -16,7 +17,15 @@ public:
 	abstract void Update() {
 		oldGeom = geom;
 	}
-	
+
+	void Resize(Vec2 size) {
+		geom.Size = size;
+	}
+
+	void Move(Vec2 pos) {
+		geom.Position = pos;
+	}
+
 	@property ref string Name() {
 		return name;
 	}
@@ -40,7 +49,7 @@ public:
 	@property bool DirtyGeometry() {
 		return geom != oldGeom;
 	}
-	
+
 protected:
 	string name;
 	Geometry geom;

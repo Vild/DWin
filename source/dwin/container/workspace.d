@@ -6,10 +6,17 @@ import dwin.data.borderstyle;
 import dwin.container.splitcontainer;
 import dwin.container.window;
 
-abstract class Workspace : Container {
+final class Workspace : Container {
 public:
 	this(string name, Geometry geom, Container parent, double splitRatio) {
 		super(name, geom, parent, BorderStyle(), splitRatio);
+	}
+
+	override void Update() {
+		// focused and fullscreen will already exist in the "root" container
+		root.Update();
+		foreach (Window w; floating)
+			w.Update();
 	}
 
 	@property ref Container Focused() {

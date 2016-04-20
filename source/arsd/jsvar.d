@@ -653,8 +653,7 @@ struct var {
 						} else
 							this[member] = __traits(getMember, t, member);
 					}
-				}
-			else {
+				} else {
 				// assoc array
 				foreach (l, v; t) {
 					this[var(l)] = var(v);
@@ -1513,7 +1512,7 @@ class PrototypeObject {
 	// FIXME: maybe throw something else
 	/*package*/
 	ref var _setMember(string name, var t, bool recurse, bool throwOnFailure, bool suppressOverloading,
-			string file = __FILE__, size_t line = __LINE__) {
+		string file = __FILE__, size_t line = __LINE__) {
 		var* mem = _peekMember(name, recurse);
 
 		if (mem !is null) {
@@ -1651,9 +1650,8 @@ WrappedNativeObject wrapNativeObject(Class)(Class obj) if (is(Class == class)) {
 							_properties[memberName] = &__traits(getMember, obj, memberName);
 						} else {
 							// if it has a type but is not a function, it is prolly a member
-							_properties[memberName] = new PropertyPrototype(() => var(__traits(getMember, obj, memberName)), (var v) {
-								__traits(getMember, obj, memberName) = v.get!(type);
-							});
+							_properties[memberName] = new PropertyPrototype(() => var(__traits(getMember, obj, memberName)),
+								(var v) { __traits(getMember, obj, memberName) = v.get!(type); });
 						}
 					}
 			}

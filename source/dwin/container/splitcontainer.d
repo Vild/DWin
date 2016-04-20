@@ -11,11 +11,16 @@ enum Layout {
 	Stacked
 }
 
-abstract class SplitContainer : Container {
+final class SplitContainer : Container {
 public:
 	this(string name, Geometry geom, Container parent, BorderStyle borderStyle, double splitRatio, Layout layout) {
 		super(name, geom, parent, borderStyle, splitRatio);
 		this.layout = layout;
+	}
+
+	override void Update() {
+		foreach (Container c; containers)
+			c.Update();
 	}
 
 private:

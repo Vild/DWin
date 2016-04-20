@@ -73,30 +73,12 @@ private:
 	}
 
 	void setup() {
-		import dwin.logic.logiccore;
+		import dwin.logic.fullscreenlogiccore;
 		import dwin.container.window;
 		import core.sys.posix.signal : signal, SIGCHLD, SIG_IGN;
 
 		signal(SIGCHLD, SIG_IGN);
-		
-		engine.Logic = new class ILogicCore {
-			void NewWindow(Window window) {
-				log.Info("Window: %s", window);
-			}
-			
-			void RemoveWindow(Window window) {
-				log.Info("Window: %s", window);
-			}
-	
-			void ShowWindow(Window window) {
-				log.Info("Window: %s", window);
-				window.Show();
-			}
-			
-			void WindowHidden(Window window) {
-				log.Info("Window: %s", window);
-				window.Hide();
-			}
-		};
+
+		engine.Logic = new FullscreenLogicCore(engine);
 	}
 }

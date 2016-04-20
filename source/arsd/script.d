@@ -306,9 +306,9 @@ class TokenStream(TextStream) {
 					if (text.length >= keyword.length && text[0 .. keyword.length] == keyword
 							&& // making sure this isn't an identifier that starts with a keyword
 							(text.length == keyword.length || !(((text[keyword.length] >= '0'
-								&& text[keyword.length] <= '9') || (text[keyword.length] >= 'a'
-								&& text[keyword.length] <= 'z') || (text[keyword.length] == '_')
-								|| (text[keyword.length] >= 'A' && text[keyword.length] <= 'Z'))))) {
+							&& text[keyword.length] <= '9') || (text[keyword.length] >= 'a'
+							&& text[keyword.length] <= 'z') || (text[keyword.length] == '_')
+							|| (text[keyword.length] >= 'A' && text[keyword.length] <= 'Z'))))) {
 						found = true;
 						if (keyword == "__FILE__") {
 							token.type = ScriptToken.Type.string;
@@ -347,7 +347,7 @@ class TokenStream(TextStream) {
 				}
 			} else if (text[0] == '"' || text[0] == '\'' || text[0] == '`' || // Also supporting double curly quoted strings: “foo” which nest. This is the utf 8 coding:
 					(text.length >= 3 && text[0] == 0xe2
-						&& text[1] == 0x80 && text[2] == 0x9c)) {
+					&& text[1] == 0x80 && text[2] == 0x9c)) {
 				char end = text[0]; // support single quote and double quote strings the same
 				int openCurlyQuoteCount = (end == 0xe2) ? 1 : 0;
 				bool escapingAllowed = end != '`'; // `` strings are raw, they don't support escapes. the others do.
@@ -463,8 +463,7 @@ class TokenStream(TextStream) {
 
 }
 
-TokenStream!TextStream lexScript(TextStream)(TextStream textStream, string scriptFilename)
-		if (is(ElementType!TextStream == string)) {
+TokenStream!TextStream lexScript(TextStream)(TextStream textStream, string scriptFilename) if (is(ElementType!TextStream == string)) {
 	return new TokenStream!TextStream(textStream, scriptFilename);
 }
 
@@ -1560,7 +1559,7 @@ class CallExpression : Expression {
 }
 
 ScriptToken requireNextToken(MyTokenStreamHere)(ref MyTokenStreamHere tokens, ScriptToken.Type type, string str = null,
-		string file = __FILE__, size_t line = __LINE__) {
+	string file = __FILE__, size_t line = __LINE__) {
 	if (tokens.empty)
 		throw new ScriptCompileException("script ended prematurely", 0, file, line);
 	auto next = tokens.front;
@@ -1572,7 +1571,7 @@ ScriptToken requireNextToken(MyTokenStreamHere)(ref MyTokenStreamHere tokens, Sc
 }
 
 bool peekNextToken(MyTokenStreamHere)(MyTokenStreamHere tokens, ScriptToken.Type type, string str = null,
-		string file = __FILE__, size_t line = __LINE__) {
+	string file = __FILE__, size_t line = __LINE__) {
 	if (tokens.empty)
 		return false;
 	auto next = tokens.front;
@@ -1914,7 +1913,7 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 				break;
 			default:
 				throw new ScriptCompileException("unexpected " ~ ident.str ~ ". valid scope(idents) are success, failure, and exit",
-						ident.lineNumber);
+					ident.lineNumber);
 			}
 
 			tokens.requireNextToken(ScriptToken.Type.symbol, ")");
@@ -1977,12 +1976,12 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 			// OR the op rewrite could pass this
 
 			expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression("__obj"),
-					new VariableExpression("prototype")), new VariableExpression("__proto"));
+				new VariableExpression("prototype")), new VariableExpression("__proto"));
 
 			auto classIdent = tokens.requireNextToken(ScriptToken.Type.identifier);
 
 			expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression("__proto"),
-					new VariableExpression("__classname")), new StringLiteralExpression(classIdent.str));
+				new VariableExpression("__classname")), new StringLiteralExpression(classIdent.str));
 
 			if (tokens.peekNextToken(ScriptToken.Type.symbol, ":")) {
 				tokens.popFront();
@@ -1990,8 +1989,9 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 
 				// we set our prototype to the Foo prototype, thereby inheriting any static data that way (includes functions)
 				// the inheritFrom object itself carries instance  data that we need to copy onto our instance
-				expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression("__proto"), new VariableExpression("prototype")),
-						new DotVarExpression(new VariableExpression(inheritFrom.str), new VariableExpression("prototype")));
+				expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression("__proto"),
+					new VariableExpression("prototype")), new DotVarExpression(new VariableExpression(inheritFrom.str),
+					new VariableExpression("prototype")));
 
 				// and copying the instance initializer from the parent
 				expressions ~= new ShallowCopyExpression(new VariableExpression("__obj"), new VariableExpression(inheritFrom.str));
@@ -2003,7 +2003,7 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 				foreach (i, ident; decl.identifiers) {
 					// FIXME: make sure this goes on the instance, never the prototype!
 					expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression(o),
-							new VariableExpression(ident), false), decl.initializers[i], true  // no overloading because otherwise an early opIndexAssign can mess up the decls
+						new VariableExpression(ident), false), decl.initializers[i], true  // no overloading because otherwise an early opIndexAssign can mess up the decls
 					);
 				}
 			}
@@ -2025,7 +2025,7 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 					auto bod = parseExpression(tokens);
 
 					expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression("__proto"),
-							new VariableExpression("__ctor")), new FunctionLiteralExpression(args, bod, staticScopeBacking));
+						new VariableExpression("__ctor")), new FunctionLiteralExpression(args, bod, staticScopeBacking));
 				} else if (tokens.peekNextToken(ScriptToken.Type.keyword, "var")) {
 					// instance variable
 					auto decl = parseVariableDeclaration(tokens, ";");
@@ -2046,7 +2046,7 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 					auto bod = parseExpression(tokens);
 
 					expressions ~= new AssignExpression(new DotVarExpression(new VariableExpression("__proto"),
-							new VariableExpression(ident.str), false), new FunctionLiteralExpression(args, bod, staticScopeBacking));
+						new VariableExpression(ident.str), false), new FunctionLiteralExpression(args, bod, staticScopeBacking));
 				} else
 					throw new ScriptCompileException("Unexpected " ~ tokens.front.str ~ " when reading class decl", tokens.front.lineNumber);
 			}
@@ -2126,7 +2126,8 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 			e.loopBody = parseExpression(tokens);
 			ret = e;
 			expectedEnd = "";
-		} else if (tokens.peekNextToken(ScriptToken.Type.keyword, "break") || tokens.peekNextToken(ScriptToken.Type.keyword, "continue")) {
+		} else if (tokens.peekNextToken(ScriptToken.Type.keyword, "break") || tokens.peekNextToken(ScriptToken.Type.keyword,
+				"continue")) {
 			auto token = tokens.front;
 			tokens.popFront();
 			ret = new LoopControlExpression(token.str);
@@ -2184,7 +2185,7 @@ Expression parseExpression(MyTokenStreamHere)(ref MyTokenStreamHere tokens, bool
 
 	if (expectedEnd.length && tokens.empty)
 		throw new ScriptCompileException(
-				"Parse error, unexpected end of input when reading expression, expecting " ~ expectedEnd, first.lineNumber);
+			"Parse error, unexpected end of input when reading expression, expecting " ~ expectedEnd, first.lineNumber);
 
 	if (expectedEnd.length && consumeEnd) {
 		if (tokens.peekNextToken(ScriptToken.Type.symbol, expectedEnd))
@@ -2230,7 +2231,7 @@ tryTermination:
 		if (peek.str == "=") {
 			if (!equalOk)
 				throw new ScriptCompileException("Parse error, unexpected '" ~ identifier.str ~ "' after reading var initializer",
-						peek.lineNumber);
+					peek.lineNumber);
 			equalOk = false;
 			tokens.popFront();
 			initializer = parseExpression(tokens);
@@ -2455,8 +2456,8 @@ auto parseScript(MyTokenStreamHere)(MyTokenStreamHere tokens) {
 	return parseCompoundStatement(tokens);
 }
 
-var interpretExpressions(ExpressionStream)(ExpressionStream expressions, PrototypeObject variables)
-		if (is(ElementType!ExpressionStream == Expression)) {
+var interpretExpressions(ExpressionStream)(ExpressionStream expressions, PrototypeObject variables) if (
+		is(ElementType!ExpressionStream == Expression)) {
 	assert(variables !is null);
 	var ret;
 	foreach (expression; expressions) {
@@ -2467,18 +2468,17 @@ var interpretExpressions(ExpressionStream)(ExpressionStream expressions, Prototy
 	return ret;
 }
 
-var interpretStream(MyTokenStreamHere)(MyTokenStreamHere tokens, PrototypeObject variables)
-		if (is(ElementType!MyTokenStreamHere == ScriptToken)) {
+var interpretStream(MyTokenStreamHere)(MyTokenStreamHere tokens, PrototypeObject variables) if (
+		is(ElementType!MyTokenStreamHere == ScriptToken)) {
 	assert(variables !is null);
 	// this is an entry point that all others lead to, right before getting to interpretExpressions...
 
 	return interpretExpressions(parseScript(tokens), variables);
 }
 
-var interpretStream(MyTokenStreamHere)(MyTokenStreamHere tokens, var variables)
-		if (is(ElementType!MyTokenStreamHere == ScriptToken)) {
-	return interpretStream(tokens, (variables.payloadType() == var.Type.Object && variables._payload._object !is null)
-			? variables._payload._object : new PrototypeObject());
+var interpretStream(MyTokenStreamHere)(MyTokenStreamHere tokens, var variables) if (is(ElementType!MyTokenStreamHere == ScriptToken)) {
+	return interpretStream(tokens, (variables.payloadType() == var.Type.Object
+		&& variables._payload._object !is null) ? variables._payload._object : new PrototypeObject());
 }
 
 var interpret(string code, PrototypeObject variables, string scriptFilename = null) {
@@ -2488,14 +2488,14 @@ var interpret(string code, PrototypeObject variables, string scriptFilename = nu
 
 var interpret(string code, var variables = null, string scriptFilename = null) {
 	return interpretStream(lexScript(repeat(code, 1), scriptFilename), (variables.payloadType() == var.Type.Object
-			&& variables._payload._object !is null) ? variables._payload._object : new PrototypeObject());
+		&& variables._payload._object !is null) ? variables._payload._object : new PrototypeObject());
 }
 
 var interpretFile(File file, var globals) {
 	import std.algorithm;
 
-	return interpretStream(lexScript(file.byLine.map!((a) => a.idup), file.name), (globals.payloadType() == var.Type.Object
-			&& globals._payload._object !is null) ? globals._payload._object : new PrototypeObject());
+	return interpretStream(lexScript(file.byLine.map!((a) => a.idup), file.name),
+		(globals.payloadType() == var.Type.Object && globals._payload._object !is null) ? globals._payload._object : new PrototypeObject());
 }
 
 void repl(var globals) {
