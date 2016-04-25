@@ -3,6 +3,7 @@ module dwin.container.window;
 import dwin.container.container;
 import dwin.data.geometry;
 import dwin.data.borderstyle;
+import dwin.data.changed;
 
 abstract class Window : Container {
 public:
@@ -10,11 +11,18 @@ public:
 		super(name, geom, parent, borderStyle, splitRatio);
 	}
 
-	abstract void Show() {
+	override void Update() {
+		super.Update();
+		visible.clear;
+	}
+
+	abstract void Focus();
+	
+	void Show() {
 		visible = true;
 	}
 
-	abstract void Hide() {
+	void Hide() {
 		visible = false;
 	}
 
@@ -22,9 +30,13 @@ public:
 		return visible;
 	}
 
-private:
+	@property override bool Dirty() {
+		return super.Dirty || visible.changed;
+	}
+	
+protected:
 	//string class_;
 	//string instance;
-	bool visible;
+	Changed!bool visible;
 	bool urgent;
 }

@@ -20,10 +20,9 @@ public:
 	override void ShowWindow(Window window) {
 		auto scr = engine.RootContainer.Screens[0];
 		scr.Containers ~= window;
-		//		scr.Rebalance();
+		auto wrk = scr.Workspaces[0];
+		wrk.Root.Containers ~= window;
 		window.Show();
-		window.Resize(scr.Geom.Size);
-		window.Move(Vec2(0, 0));
 	}
 
 	override void WindowHidden(Window window) {

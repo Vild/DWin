@@ -5,25 +5,34 @@ import dwin.data.geometry;
 import dwin.data.borderstyle;
 import dwin.container.splitcontainer;
 import dwin.container.window;
+import dwin.data.changed;
 
 final class Workspace : Container {
 public:
-	this(string name, Geometry geom, Container parent, double splitRatio) {
-		super(name, geom, parent, BorderStyle(), splitRatio);
+	this(string name, Geometry geom, Container parent) {
+		super(name, geom, parent, BorderStyle(), 1);
 	}
 
 	override void Update() {
-		// focused and fullscreen will already exist in the "root" container
-		root.Update();
-		foreach (Window w; floating)
-			w.Update();
+		if (fullscreen && (Dirty || fullscreen.changed))  {
+			focused.Geom = geom;
+			focused.Focus();
+			fullscreen.clear;
+		} else {
+			// focused and fullscreen will already exist in the "root" container
+			root.Update();
+			foreach (Window w; floating)
+				w.Update();
+		}
+		fullscreen.clear;
+		super.Update();
 	}
 
 	@property ref Container Focused() {
 		return focused;
 	}
 
-	@property ref Container Fullscreen() {
+	@property ref bool Fullscreen() {
 		return fullscreen;
 	}
 
@@ -37,7 +46,7 @@ public:
 
 private:
 	Container focused;
-	Container fullscreen;
+	Changed!bool fullscreen;
 	SplitContainer root;
 	Window[] floating;
 }

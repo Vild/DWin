@@ -3,6 +3,7 @@ module dwin.container.container;
 import dwin.data.geometry;
 import dwin.data.vec;
 import dwin.data.borderstyle;
+import dwin.data.changed;
 
 abstract class Container {
 public:
@@ -15,9 +16,9 @@ public:
 	}
 
 	abstract void Update() {
-		oldGeom = geom;
+		geom.clear();
 	}
-
+	
 	void Resize(Vec2 size) {
 		geom.Size = size;
 	}
@@ -46,16 +47,14 @@ public:
 		return splitRatio;
 	}
 
-	@property bool DirtyGeometry() {
-		return geom != oldGeom;
+	@property bool Dirty() {
+		return geom.changed;
 	}
-
+	
 protected:
 	string name;
-	Geometry geom;
+	Changed!Geometry geom;
 	Container parent;
 	BorderStyle borderStyle;
 	double splitRatio;
-private:
-	Geometry oldGeom;
 }

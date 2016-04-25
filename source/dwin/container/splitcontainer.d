@@ -19,11 +19,28 @@ public:
 	}
 
 	override void Update() {
+		bool needsUpdate = true;
+		foreach (Container c; containers)
+			needsUpdate |= c.DirtyGeometry;
+
+		rebalance();
+		
 		foreach (Container c; containers)
 			c.Update();
 	}
 
+	@property Container[] Containers() {
+		return containers;
+	}
+
+	@property Layout SplitLayout() {
+		return layout;
+	}
+	
 private:
 	Container[] containers;
 	Layout layout;
+
+	void rebalance() {
+	}
 }

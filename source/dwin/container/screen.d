@@ -4,6 +4,7 @@ import dwin.container.container;
 import dwin.data.geometry;
 import dwin.data.borderstyle;
 import dwin.container.splitcontainer;
+import dwin.container.workspace;
 
 final class Screen : Container {
 public:
@@ -13,6 +14,7 @@ public:
 		bottom = new SplitContainer("Bottom", Geometry(), this, BorderStyle(), 1, Layout.Horizontal);
 		left = new SplitContainer("Left", Geometry(), this, BorderStyle(), 1, Layout.Vertical);
 		right = new SplitContainer("Right", Geometry(), this, BorderStyle(), 1, Layout.Vertical);
+		workspaces ~= new Workspace("0", geom, this);
 	}
 
 	override void Update() {
@@ -20,8 +22,8 @@ public:
 		bottom.Update();
 		left.Update();
 		right.Update();
-		foreach (Container c; containers)
-			c.Update();
+		foreach (w; workspaces)
+			w.Update();
 	}
 
 	void Rebalance() {
@@ -44,8 +46,8 @@ public:
 		return right;
 	}
 
-	@property ref Container[] Containers() {
-		return containers;
+	@property ref Workspace[] Workspaces() {
+		return workspaces;
 	}
 
 private:
@@ -53,5 +55,5 @@ private:
 	SplitContainer bottom;
 	SplitContainer left;
 	SplitContainer right;
-	Container[] containers;
+	Workspace[] workspace;
 }

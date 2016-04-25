@@ -4,6 +4,7 @@ import dwin.container.window;
 import dwin.data.geometry;
 import dwin.data.borderstyle;
 import dwin.backend.xcb.engine;
+import dwin.data.changed;
 
 import xcb.xcb;
 
@@ -16,26 +17,35 @@ public:
 	}
 
 	override void Update() {
-		if (!DirtyGeometry)
+		if (!Dirty)
 			return;
 		scope (exit)
 			super.Update();
 
-		uint[] data = [geom.x, geom.y, geom.width, geom.height];
-		xcb_configure_window(engine.Connection, window,
-			XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
+		if (geom.changed) {
+			uint[] data = [geom.x, geom.y, geom.width, geom.height];
+			xcb_configure_window(engine.Connection, window,
+													 XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
+		}
+		if (visible.changed) {
+			if (visible)
+				xcb_map_window(engine.Connection, window);
+			else {
+				xcb_unmap_window(engine.Connection, window);
+				
+			}
+		}
+
+		if (needFocus.clear) {
+			uint[] data = [XCB_STACK_MODE_TOP];
+			xcb_configure_window(engine.Connnection, window, XCB_CONFIG_WINDOW_STACK_MODE, data.ptr);
+		}
 	}
 
-	override void Show() {
-		super.Show();
-		xcb_map_window(engine.Connection, window);
+	override void Focus() {
+		needFocus = true;
 	}
-
-	override void Hide() {
-		super.Hide();
-		xcb_unmap_window(engine.Connection, window);
-	}
-
+	
 	@property xcb_window_t InternalWindow() {
 		return window;
 	}
@@ -43,4 +53,5 @@ public:
 private:
 	XCBEngine engine;
 	xcb_window_t window;
+	Changed!bool needFocus;
 }
