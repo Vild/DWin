@@ -3,6 +3,7 @@ module dwin.container.splitcontainer;
 import dwin.container.container;
 import dwin.data.geometry;
 import dwin.data.borderstyle;
+import dwin.data.changed;
 
 enum Layout {
 	Horizontal,
@@ -19,28 +20,40 @@ public:
 	}
 
 	override void Update() {
-		bool needsUpdate = true;
-		foreach (Container c; containers)
-			needsUpdate |= c.DirtyGeometry;
-
+		if (!Dirty)
+			return;
+	 
 		rebalance();
 		
 		foreach (Container c; containers)
 			c.Update();
 	}
 
-	@property Container[] Containers() {
+	@property ref Container[] Containers() {
 		return containers;
 	}
 
-	@property Layout SplitLayout() {
-		return layout;
+	@property ref Layout SplitLayout() {
+		return layout.data;
+	}
+
+	@property override bool Dirty() {
+		if (super.Dirty || layout.changed)
+			return true;
+
+		foreach (Container c; containers)
+			if (c.Dirty)
+				return true;
+		
+		return false;
 	}
 	
 private:
 	Container[] containers;
-	Layout layout;
+	Changed!Layout layout;
 
 	void rebalance() {
+		
+		//assert(0, "TODO: implement rebalance");
 	}
 }

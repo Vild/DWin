@@ -15,10 +15,12 @@ public:
 		this.splitRatio = splitRatio;
 	}
 
-	abstract void Update() {
-		geom.clear();
+	abstract void Update();
+
+	void Focus() {
+		needFocus = true;
 	}
-	
+		
 	void Resize(Vec2 size) {
 		geom.Size = size;
 	}
@@ -32,7 +34,7 @@ public:
 	}
 
 	@property ref Geometry Geom() {
-		return geom;
+		return geom.data;
 	}
 
 	@property ref Container Parent() {
@@ -48,7 +50,7 @@ public:
 	}
 
 	@property bool Dirty() {
-		return geom.changed;
+		return geom.changed || needFocus.changed;
 	}
 	
 protected:
@@ -57,4 +59,5 @@ protected:
 	Container parent;
 	BorderStyle borderStyle;
 	double splitRatio;
+	Changed!bool needFocus;
 }

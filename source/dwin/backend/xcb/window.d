@@ -19,33 +19,32 @@ public:
 	override void Update() {
 		if (!Dirty)
 			return;
-		scope (exit)
-			super.Update();
 
 		if (geom.changed) {
+			geom.clear;
 			uint[] data = [geom.x, geom.y, geom.width, geom.height];
 			xcb_configure_window(engine.Connection, window,
 													 XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, data.ptr);
 		}
-		if (visible.changed) {
+		if (visible.clear) {
+			uint eventOff = engine.RootEventMask & ~XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY;
+			uint eventOn = engine.RootEventMask;
+			xcb_change_window_attributes(engine.Connection, engine.RawRoot, XCB_CW_EVENT_MASK, &eventOff);
+			
 			if (visible)
 				xcb_map_window(engine.Connection, window);
-			else {
+			else
 				xcb_unmap_window(engine.Connection, window);
-				
-			}
+			
+			xcb_change_window_attributes(engine.Connection, engine.RawRoot, XCB_CW_EVENT_MASK, &eventOn);
 		}
 
 		if (needFocus.clear) {
-			uint[] data = [XCB_STACK_MODE_TOP];
-			xcb_configure_window(engine.Connnection, window, XCB_CONFIG_WINDOW_STACK_MODE, data.ptr);
+			uint[] data = [XCB_STACK_MODE_TOP_IF];
+			xcb_configure_window(engine.Connection, window, XCB_CONFIG_WINDOW_STACK_MODE, data.ptr);
 		}
 	}
 
-	override void Focus() {
-		needFocus = true;
-	}
-	
 	@property xcb_window_t InternalWindow() {
 		return window;
 	}
@@ -53,5 +52,4 @@ public:
 private:
 	XCBEngine engine;
 	xcb_window_t window;
-	Changed!bool needFocus;
 }

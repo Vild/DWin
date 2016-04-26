@@ -32,12 +32,12 @@ public:
 			HandleEvent();
 
 			root.Update();
-
+			/*
 			try {
 				Thread.sleep(100.msecs);
 			}
 			catch (Exception) {
-			}
+			}*/
 		}
 		scriptMgr.RunDtors();
 	}

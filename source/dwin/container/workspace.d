@@ -11,11 +11,15 @@ final class Workspace : Container {
 public:
 	this(string name, Geometry geom, Container parent) {
 		super(name, geom, parent, BorderStyle(), 1);
+		root = new SplitContainer("Root", geom, this, BorderStyle(), 1, Layout.Horizontal);
 	}
 
 	override void Update() {
-		if (fullscreen && (Dirty || fullscreen.changed))  {
-			focused.Geom = geom;
+		if (!Dirty)
+			return;
+		
+		if (fullscreen)  {
+			focused.Geom = geom.data;
 			focused.Focus();
 			fullscreen.clear;
 		} else {
@@ -25,7 +29,6 @@ public:
 				w.Update();
 		}
 		fullscreen.clear;
-		super.Update();
 	}
 
 	@property ref Container Focused() {
@@ -33,7 +36,7 @@ public:
 	}
 
 	@property ref bool Fullscreen() {
-		return fullscreen;
+		return fullscreen.data;
 	}
 
 	@property ref SplitContainer Root() {
@@ -44,6 +47,17 @@ public:
 		return floating;
 	}
 
+	@property override bool Dirty() {
+		if (super.Dirty || root.Dirty)
+			return true;
+
+		foreach (Window w; floating)
+			if (w.Dirty)
+				return true;
+		
+		return false;
+	}
+	
 private:
 	Container focused;
 	Changed!bool fullscreen;

@@ -49,9 +49,101 @@ public:
 	}
 
 	override void HandleEvent() {
-		const xcb_generic_event_t* e = xcb_poll_for_event(con);
-		if (!e)
-			return;
+
+		//TODO: https://github.com/baskerville/bspwm/blob/331cc9e2d563c75ac5b94972cf805bf4a8a626ee/bspwm.c#L152
+		// Implement select/poll and stuff
+		
+		const xcb_generic_event_t* e;
+		while ((e = xcb_poll_for_event(con)) != null) {
+			handleEvent(e);
+			xcb_free(e);
+		}
+		
+		xcb_flush(con);
+	}
+
+	@property xcb_window_t RawRoot() {
+		return screen.root;
+	}
+	
+	@property xcb_connection_t* Connection() {
+		return con;
+	}
+
+	@property xcb_key_symbols_t* Symbols() {
+		return symbols;
+	}
+
+	@property uint RootEventMask() {
+		return rootEventMask;
+	}
+
+private:
+	enum connectionError {
+		Error = 1,
+		ClosedExtNotSupported,
+		ClosedMemInsufficient,
+		ClosedReqLenExceed,
+		ClosedParseErr,
+		ClosedInvalidScreen
+	}
+
+	//dfmt off
+	uint rootEventMask =
+		XCB_EVENT_MASK_STRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
+		XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, CreateNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
+		XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | // CirculateRequest, ConfigureRequest, MapRequest
+		XCB_EVENT_MASK_PROPERTY_CHANGE // PropertyNotify
+		;
+	//dfmt on
+
+	xcb_connection_t* con;
+	xcb_screen_t* screen;
+	xcb_key_symbols_t* symbols;
+	xcb_ewmh_connection_t ewmhCon;
+
+	xcb_screen_t* getScreen(int screen) {
+		for (auto it = xcb_setup_roots_iterator(xcb_get_setup(con)); it.rem; --screen, xcb_screen_next(&it))
+			if (screen == 0)
+				return it.data;
+		return null;
+	}
+
+	void takeWMControl() {
+		xcb_generic_error_t* error = xcb_request_check(con, xcb_change_window_attributes_checked(con, screen.root,
+			XCB_CW_EVENT_MASK, &rootEventMask));
+		if (error) {
+			scope (exit)
+				xcb_free(error);
+			//dfmt off
+			log.Fatal(
+				"XCB error: %s, sequence: %s, resource id: %s, major code: %s, minor code: %s",
+				cast(XCBErrorCode)error.error_code,
+				error.sequence,
+				error.resource_id,
+				error.major_code,
+				error.minor_code);
+			//dfmt on
+		}
+	}
+
+	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
+		foreach (i, win; windows)
+			if (auto window = cast(XCBWindow)win)
+				if (window.InternalWindow == id) {
+					if (idx != null)
+						*idx = i;
+					return window;
+				}
+
+		return null;
+	}
+
+	void setup() {
+
+	}
+	
+	void handleEvent(const xcb_generic_event_t* e) {
 		XCBEvent ev = cast(XCBEvent)(e.response_type & ~0x80);
 
 		mouse.Update();
@@ -157,81 +249,6 @@ public:
 		case XCB_CLIENT_MESSAGE:
 			break;
 		}
-
-		xcb_free(cast(void*)e);
-		xcb_flush(con);
 	}
 
-	@property xcb_connection_t* Connection() {
-		return con;
-	}
-
-	@property xcb_key_symbols_t* Symbols() {
-		return symbols;
-	}
-
-private:
-	enum connectionError {
-		Error = 1,
-		ClosedExtNotSupported,
-		ClosedMemInsufficient,
-		ClosedReqLenExceed,
-		ClosedParseErr,
-		ClosedInvalidScreen
-	}
-
-	//dfmt off
-	uint rootEventMask =
-		XCB_EVENT_MASK_STRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
-		XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // CirculateNotify, ConfigureNotify, CreateNotify, DestroyNotify, GravityNotify, MapNotify, ReparentNotify, UnmapNotify
-		XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | // CirculateRequest, ConfigureRequest, MapRequest
-		XCB_EVENT_MASK_PROPERTY_CHANGE // PropertyNotify
-		;
-	//dfmt on
-
-	xcb_connection_t* con;
-	xcb_screen_t* screen;
-	xcb_key_symbols_t* symbols;
-	xcb_ewmh_connection_t ewmhCon;
-
-	xcb_screen_t* getScreen(int screen) {
-		for (auto it = xcb_setup_roots_iterator(xcb_get_setup(con)); it.rem; --screen, xcb_screen_next(&it))
-			if (screen == 0)
-				return it.data;
-		return null;
-	}
-
-	void takeWMControl() {
-		xcb_generic_error_t* error = xcb_request_check(con, xcb_change_window_attributes_checked(con, screen.root,
-			XCB_CW_EVENT_MASK, &rootEventMask));
-		if (error) {
-			scope (exit)
-				xcb_free(error);
-			//dfmt off
-			log.Fatal(
-				"XCB error: %s, sequence: %s, resource id: %s, major code: %s, minor code: %s",
-				cast(XCBErrorCode)error.error_code,
-				error.sequence,
-				error.resource_id,
-				error.major_code,
-				error.minor_code);
-			//dfmt on
-		}
-	}
-
-	XCBWindow findWindow(xcb_window_t id, ulong* idx = null) {
-		foreach (i, win; windows)
-			if (auto window = cast(XCBWindow)win)
-				if (window.InternalWindow == id) {
-					if (idx != null)
-						*idx = i;
-					return window;
-				}
-
-		return null;
-	}
-
-	void setup() {
-
-	}
 }

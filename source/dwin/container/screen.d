@@ -18,6 +18,8 @@ public:
 	}
 
 	override void Update() {
+		if (!Dirty)
+			return;
 		top.Update();
 		bottom.Update();
 		left.Update();
@@ -50,10 +52,21 @@ public:
 		return workspaces;
 	}
 
+	@property override bool Dirty() {
+		if (super.Dirty || top.Dirty || bottom.Dirty || left.Dirty || right.Dirty)
+			return true;
+
+		foreach (Workspace w; workspaces)
+			if (w.Dirty)
+				return true;
+
+		return false;
+	}
+	
 private:
 	SplitContainer top;
 	SplitContainer bottom;
 	SplitContainer left;
 	SplitContainer right;
-	Workspace[] workspace;
+	Workspace[] workspaces;
 }

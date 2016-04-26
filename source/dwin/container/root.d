@@ -12,6 +12,9 @@ abstract class Root : Container {
 	}
 
 	override void Update() {
+		if (!Dirty)
+			return;
+		
 		foreach (Screen s; screens)
 			s.Update();
 
@@ -25,6 +28,21 @@ abstract class Root : Container {
 
 	@property ref Window[] StickyWindows() {
 		return stickyWindows;
+	}
+
+	@property override bool Dirty() {
+		if (super.Dirty)
+			return true;
+
+		foreach (Screen s; screens)
+			if (s.Dirty)
+				return true;
+
+		foreach (Window w; stickyWindows)
+			if (w.Dirty)
+				return true;
+		
+		return false;
 	}
 
 protected:

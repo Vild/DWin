@@ -11,13 +11,6 @@ public:
 		super(name, geom, parent, borderStyle, splitRatio);
 	}
 
-	override void Update() {
-		super.Update();
-		visible.clear;
-	}
-
-	abstract void Focus();
-	
 	void Show() {
 		visible = true;
 	}
@@ -27,7 +20,7 @@ public:
 	}
 
 	@property bool Visible() {
-		return visible;
+		return visible.data;
 	}
 
 	@property override bool Dirty() {

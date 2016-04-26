@@ -19,7 +19,6 @@ public:
 
 	override void ShowWindow(Window window) {
 		auto scr = engine.RootContainer.Screens[0];
-		scr.Containers ~= window;
 		auto wrk = scr.Workspaces[0];
 		wrk.Root.Containers ~= window;
 		window.Show();
@@ -27,14 +26,23 @@ public:
 
 	override void WindowHidden(Window window) {
 		auto scr = engine.RootContainer.Screens[0];
-		window.Hide();
+		auto wrk = scr.Workspaces[0];
 
-		size_t idx = 0;
-		for(; idx < scr.Containers.length; idx++)
-			if (scr.Containers[idx] == window)
-				break;
-		for(; idx < scr.Containers.length - 1; idx++)
-			scr.Containers[idx] = scr.Containers[idx + 1];
-		scr.Containers.length--;
+		// Hacky way of getting a ref variable
+		(ref con) {
+			window.Hide();
+
+			size_t idx = 0;
+			for(; idx < con.length; idx++)
+				if (con[idx] == window)
+					break;
+
+			if (idx == con.length)
+				return;
+			
+			for(; idx < con.length - 1; idx++)
+				con[idx] = con[idx + 1];
+			con.length--;
+		} (wrk.Root.Containers);
 	}
 }
