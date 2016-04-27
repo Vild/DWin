@@ -20,7 +20,11 @@ public:
 	override void ShowWindow(Window window) {
 		auto scr = engine.RootContainer.Screens[0];
 		auto wrk = scr.Workspaces[0];
-		wrk.Root.Containers ~= window;
+		window.Update();
+		if (window.Desktop == uint.max)
+			scr.Top.Containers ~= window;
+		else
+			wrk.Root.Containers ~= window;
 		window.Show();
 	}
 
@@ -29,7 +33,7 @@ public:
 		auto wrk = scr.Workspaces[0];
 
 		// Hacky way of getting a ref variable
-		(ref con) {
+		alias removeWindow = (ref con) => {
 			window.Hide();
 
 			size_t idx = 0;
@@ -43,6 +47,10 @@ public:
 			for (; idx < con.length - 1; idx++)
 				con[idx] = con[idx + 1];
 			con.length--;
-		}(wrk.Root.Containers);
+		};
+		if (window.Desktop == uint.max)
+			removeWindow(scr.Top.Containers);
+		else
+			removeWindow(wrk.Root.Containers);
 	}
 }

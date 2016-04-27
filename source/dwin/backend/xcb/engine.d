@@ -51,7 +51,7 @@ public:
 	}
 
 	override void HandleEvent() {
-		auto ret = poll(pollFD.ptr, pollFD.length, 1000 / 10);
+		auto ret = poll(pollFD.ptr, pollFD.length, 0);
 
 		import core.stdc.stdio;
 
@@ -68,9 +68,10 @@ public:
 					xcb_free(e);
 				}
 
-				xcb_flush(con);
 			}
 		}
+		
+		xcb_flush(con);
 	}
 
 	@property xcb_window_t RawRoot() {
@@ -85,6 +86,10 @@ public:
 		return symbols;
 	}
 
+	@property xcb_ewmh_connection_t * EWMHConnection() {
+		return &ewmhCon;
+	}
+	
 	@property uint RootEventMask() {
 		return rootEventMask;
 	}

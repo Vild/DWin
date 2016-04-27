@@ -3,18 +3,32 @@ module dwin.script.api.engineapi;
 import dwin.backend.engine;
 import dwin.script.utils;
 
+import dwin.container.container;
+import dwin.container.root;
+import dwin.container.screen;
+import dwin.container.splitcontainer;
+import dwin.container.window;
+import dwin.container.workspace;
+
 struct EngineAPI {
 	void Init(Engine engine) {
 		this.engine = engine;
 	}
 
-	/*var GetScreens(var, var[]) {
-		var screens = var.emptyArray;
-		foreach (screen; engine.Screens)
-			screens ~= createVar(screen);
-		return screens;
-	}*/
-
+	var GetRoot(var, var[]) {
+		Root rootCon = engine.RootContainer;
+		var root = _genericVar(rootCon);
+		
+		root.Screens = var.emptyArray;
+		foreach (scr; rootCon.Screens)
+			root.Screens ~= createVar(scr);
+		
+		root.StickyWindows = var.emptyArray;
+		foreach (window; rootCon.StickyWindows)
+			root.StickyWindows ~= createVar(window);
+		return root;
+	}
+	
 	var Quit(var, var[] args) {
 		engine.Quit = true;
 		return var.emptyObject;
@@ -29,11 +43,26 @@ struct EngineAPI {
 	Engine engine;
 
 private:
-	/*var createVar(Screen screen) {
-		var scr = var.emptyObject;
-		scr.Name = screen.Name;
-		scr.CurrentWorkspace = screen.CurrentWorkspace;
-		scr.OnTop = createVar(screen.OnTop);
+	var _genericVar(Container container) {
+		var con = var.emptyObject;
+		con.Name = container.Name;
+ 		con.Geom = var.emptyObject;
+		con.Geom.X = container.Geom.x;		
+		con.Geom.Y = container.Geom.y;
+		con.Geom.Width = container.Geom.width;		
+		con.Geom.Height = container.Geom.height;
+		con.SplitRatio = container.SplitRatio;
+		return con;
+	}
+	
+	var createVar(Screen screen) {
+		var scr = _genericVar(screen);
+		scr.ActiveWorkspace = screen.ActiveWorkspace;
+		scr.Top = createVar(screen.Top);
+		scr.Bottom = createVar(screen.Bottom);
+		scr.Left = createVar(screen.Left);
+		scr.Right = createVar(screen.Right);
+		
 		scr.Workspaces = var.emptyArray;
 		foreach (workspace; screen.Workspaces)
 			scr.Workspaces ~= createVar(workspace);
@@ -41,41 +70,39 @@ private:
 	}
 
 	var createVar(Workspace workspace) {
-		var work = var.emptyObject;
-		work.Name = workspace.Name;
-		work.OnTop = createVar(workspace.OnTop);
+		var work = _genericVar(workspace);
+		work.Focused = createVar(workspace.Focused);
+		work.Fullscreen = workspace.Fullscreen;
 		work.Root = createVar(workspace.Root);
-		work.ActiveWindow = createVar(workspace.ActiveWindow);
+		
+		work.Floating = var.emptyArray;
+		foreach (window; workspace.Floating)
+			work.Floating ~= createVar(window);
 		return work;
 	}
 
 	var createVar(Container con) {
 		if (auto win = cast(Window)con)
 			return createVar(win);
-		else if (auto layout = cast(Layout)con)
-			return createVar(layout);
+		else if (auto split = cast(SplitContainer)con)
+			return createVar(split);
 		return var(null);
 	}
 
-	var createVar(Layout layout) {
-		var l = var.emptyObject;
-		l.IsWindow = false;
-		l["ToString"] = layout.toString();
-		l.IsVisible = layout.IsVisible;
-		l.Containers = var.emptyArray;
-		foreach (container; layout.Containers)
-			l.Containers ~= createVar(container);
-		return l;
+	var createVar(SplitContainer splitContainer) {
+		var split = _genericVar(splitContainer);
+		
+		split.Containers = var.emptyArray;
+		foreach (con; splitContainer.Containers)
+			split.Containers ~= createVar(con);
+
+		split.SplitLayout = splitContainer.SplitLayout;
+		return split;
 	}
 
 	var createVar(Window window) {
-		if (!window)
-			return var.emptyObject;
-		var win = var.emptyObject;
-		win.IsWindow = true;
-		win.Title = window.Title();
-		win["ToString"] = window.toString();
-		win.IsVisible = window.IsVisible;
+		var win = _genericVar(window);
+		win.Visible = window.Visible;
 		return win;
-	}*/
+	}
 }
