@@ -20,7 +20,7 @@ public:
 	void Focus() {
 		needFocus = true;
 	}
-		
+
 	void Resize(Vec2 size) {
 		geom.Size = size;
 	}
@@ -52,7 +52,7 @@ public:
 	@property bool Dirty() {
 		return geom.changed || needFocus.changed;
 	}
-	
+
 protected:
 	string name;
 	Changed!Geometry geom;

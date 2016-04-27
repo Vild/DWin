@@ -31,7 +31,7 @@ public:
 	void Rebalance() {
 		//TODO: 
 	}
-	
+
 	@property SplitContainer Top() {
 		return top;
 	}
@@ -62,7 +62,7 @@ public:
 
 		return false;
 	}
-	
+
 private:
 	SplitContainer top;
 	SplitContainer bottom;

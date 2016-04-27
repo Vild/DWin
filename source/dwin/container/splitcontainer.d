@@ -22,9 +22,9 @@ public:
 	override void Update() {
 		if (!Dirty)
 			return;
-	 
+
 		rebalance();
-		
+
 		foreach (Container c; containers)
 			c.Update();
 	}
@@ -44,16 +44,16 @@ public:
 		foreach (Container c; containers)
 			if (c.Dirty)
 				return true;
-		
+
 		return false;
 	}
-	
+
 private:
 	Container[] containers;
 	Changed!Layout layout;
 
 	void rebalance() {
-		
+
 		//assert(0, "TODO: implement rebalance");
 	}
 }

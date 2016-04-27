@@ -14,7 +14,7 @@ abstract class Root : Container {
 	override void Update() {
 		if (!Dirty)
 			return;
-		
+
 		foreach (Screen s; screens)
 			s.Update();
 
@@ -41,7 +41,7 @@ abstract class Root : Container {
 		foreach (Window w; stickyWindows)
 			if (w.Dirty)
 				return true;
-		
+
 		return false;
 	}
 

@@ -8,6 +8,8 @@ import xcb.ewmh;
 import xcb.keysyms;
 import xcb.icccm;
 
+import core.sys.posix.poll;
+
 import dwin.backend.engine;
 import dwin.log;
 import dwin.backend.xcb.event;
@@ -49,23 +51,32 @@ public:
 	}
 
 	override void HandleEvent() {
+		auto ret = poll(pollFD.ptr, pollFD.length, 1000 / 10);
 
-		//TODO: https://github.com/baskerville/bspwm/blob/331cc9e2d563c75ac5b94972cf805bf4a8a626ee/bspwm.c#L152
-		// Implement select/poll and stuff
-		
-		const xcb_generic_event_t* e;
-		while ((e = xcb_poll_for_event(con)) != null) {
-			handleEvent(e);
-			xcb_free(e);
+		import core.stdc.stdio;
+
+		if (ret < 0) {
+			perror("");
+			assert(ret < 0, "Poll failed!");	
 		}
 		
-		xcb_flush(con);
+		if (ret) {
+			if (pollFD[0].revents & POLLIN) {
+				xcb_generic_event_t* e;
+				while ((e = xcb_poll_for_event(con)) != null) {
+					handleEvent(e);
+					xcb_free(e);
+				}
+
+				xcb_flush(con);
+			}
+		}
 	}
 
 	@property xcb_window_t RawRoot() {
 		return screen.root;
 	}
-	
+
 	@property xcb_connection_t* Connection() {
 		return con;
 	}
@@ -101,6 +112,7 @@ private:
 	xcb_screen_t* screen;
 	xcb_key_symbols_t* symbols;
 	xcb_ewmh_connection_t ewmhCon;
+	pollfd[1] pollFD;
 
 	xcb_screen_t* getScreen(int screen) {
 		for (auto it = xcb_setup_roots_iterator(xcb_get_setup(con)); it.rem; --screen, xcb_screen_next(&it))
@@ -140,9 +152,9 @@ private:
 	}
 
 	void setup() {
-
+		pollFD[0] = pollfd(xcb_get_file_descriptor(con), POLLIN, 0);
 	}
-	
+
 	void handleEvent(const xcb_generic_event_t* e) {
 		XCBEvent ev = cast(XCBEvent)(e.response_type & ~0x80);
 

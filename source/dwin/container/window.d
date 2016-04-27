@@ -26,7 +26,7 @@ public:
 	@property override bool Dirty() {
 		return super.Dirty || visible.changed;
 	}
-	
+
 protected:
 	//string class_;
 	//string instance;

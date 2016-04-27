@@ -33,16 +33,16 @@ public:
 			window.Hide();
 
 			size_t idx = 0;
-			for(; idx < con.length; idx++)
+			for (; idx < con.length; idx++)
 				if (con[idx] == window)
 					break;
 
 			if (idx == con.length)
 				return;
-			
-			for(; idx < con.length - 1; idx++)
+
+			for (; idx < con.length - 1; idx++)
 				con[idx] = con[idx + 1];
 			con.length--;
-		} (wrk.Root.Containers);
+		}(wrk.Root.Containers);
 	}
 }

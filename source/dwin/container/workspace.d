@@ -17,8 +17,8 @@ public:
 	override void Update() {
 		if (!Dirty)
 			return;
-		
-		if (fullscreen)  {
+
+		if (fullscreen) {
 			focused.Geom = geom.data;
 			focused.Focus();
 			fullscreen.clear;
@@ -54,10 +54,10 @@ public:
 		foreach (Window w; floating)
 			if (w.Dirty)
 				return true;
-		
+
 		return false;
 	}
-	
+
 private:
 	Container focused;
 	Changed!bool fullscreen;
