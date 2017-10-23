@@ -47,7 +47,7 @@ int main(string[] args) {
 		if (Xephyr)
 			kill(Xephyr);
 
-	spawnProcess(["feh", "--bg-scale", "http://wild.tk/DWinBG.png"]);
+	spawnProcess(["feh", "--bg-scale", "https://wallpaperscraft.com/image/black_light_dark_figures_73356_1920x1080.jpg"]);
 
 	auto dwin = new DWin(display);
 	scope (exit)
