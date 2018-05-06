@@ -33,7 +33,7 @@ public:
 
 		activeWorkspace.clear;
 	}
-	
+
 	@property SplitContainer Top() {
 		return top;
 	}
@@ -57,7 +57,7 @@ public:
 	@property ref size_t ActiveWorkspace() {
 		return activeWorkspace.data;
 	}
-	
+
 	@property override bool Dirty() {
 		if (super.Dirty || top.Dirty || bottom.Dirty || left.Dirty || right.Dirty || activeWorkspace.changed)
 			return true;

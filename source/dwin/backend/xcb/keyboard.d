@@ -37,9 +37,9 @@ public:
 				xcb_free(code);
 			} else {
 				foreach (mod; modifiers)
-					grabButton(true,
-						XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
-						XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, keyBind.mouseButton, cast(Modifier)(keyBind.modifier | mod));
+					grabButton(true, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
+							XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, keyBind.mouseButton,
+							cast(Modifier)(keyBind.modifier | mod));
 			}
 		}
 	}
@@ -79,7 +79,7 @@ public:
 
 	void HandleButtonPressEvent(xcb_button_press_event_t* e) {
 		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)),
-			keyParser.ParseKey("None"), cast(MouseButton)e.detail);
+				keyParser.ParseKey("None"), cast(MouseButton)e.detail);
 
 		engine.MouseMgr.Set(e.root_x, e.root_y);
 		if (auto map = keyBind in mappings)
@@ -88,7 +88,7 @@ public:
 
 	void HandleButtonReleaseEvent(xcb_button_release_event_t* e) {
 		KeyBind keyBind = KeyBind(cast(Modifier)(e.state & ~(keyParser.NumlockMask | keyParser.MouseMasks)),
-			keyParser.ParseKey("None"), cast(MouseButton)e.detail);
+				keyParser.ParseKey("None"), cast(MouseButton)e.detail);
 
 		engine.MouseMgr.Set(e.root_x, e.root_y);
 		if (auto map = keyBind in mappings)
@@ -124,7 +124,7 @@ private:
 	}
 
 	auto grabButton(bool owner_events, ushort event_mask, ubyte pointerMode, ubyte keyboardMode, xcb_cursor_t cursor,
-		MouseButton button, Modifier modifiers) {
+			MouseButton button, Modifier modifiers) {
 		//dfmt off
 		return xcb_grab_button(
 			engine.Connection,

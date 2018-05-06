@@ -10,7 +10,7 @@ int main(string[] args) {
 	bool noXephyr = false;
 
 	auto result = getopt(args, "d|display", "The display to run it on", &display, "n|no-xephyr",
-		"Run it native, without Xephyr", &noXephyr);
+			"Run it native, without Xephyr", &noXephyr);
 
 	if (result.helpWanted) {
 		defaultGetoptPrinter("DWin is a tiled based window manager written in the lovely language called D", result.options);
@@ -39,7 +39,7 @@ int main(string[] args) {
 		import core.time : seconds;
 
 		Xephyr = spawnProcess([`Xephyr`, `-keybd`, `ephyr,,,xkbmodel=pc105,xkblayout=se,xkbrules=evdev,xkboption=`,
-			`-name`, title, `-ac`, `-br`, `-noreset`, `+extension`, `RANDR`, `+xinerama`, `-screen`, size, `:` ~ to!string(display)]);
+				`-name`, title, `-ac`, `-br`, `-noreset`, `+extension`, `RANDR`, `+xinerama`, `-screen`, size, `:` ~ to!string(display)]);
 		Thread.sleep(1.seconds);
 	}
 	environment["DISPLAY"] = ":" ~ to!string(display);

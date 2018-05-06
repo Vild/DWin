@@ -60,14 +60,14 @@ private:
 	Changed!Layout layout;
 
 	import std.stdio;
-	
+
 	void rebalance() {
 		if (layout >= Layout.Tabbed) {
 			writeln(__FUNCTION__, ":", __LINE__, " --> ", layout);
 			Geometry g = geom.data;
 
 			//TODO: Remove size of status bar thingy
-			with(containers[0]) {
+			with (containers[0]) {
 				Geom = g;
 				Focus();
 			}
@@ -82,7 +82,7 @@ private:
 					g.x = xpos;
 					g.width = cast(int)(c.SplitRatio * g.width);
 					xpos += g.width;
-					writeln(idx, ": " , c.Geom, " to ", g);
+					writeln(idx, ": ", c.Geom, " to ", g);
 					c.Geom = g;
 				}
 			} else {
@@ -93,7 +93,7 @@ private:
 					g.y = ypos;
 					g.height = cast(int)(c.SplitRatio * g.height);
 					ypos += g.height;
-					writeln(idx, ": " , c.Geom, " to ", g);
+					writeln(idx, ": ", c.Geom, " to ", g);
 					c.Geom = g;
 				}
 			}
@@ -102,15 +102,15 @@ private:
 
 	void fixSplitRatio() {
 		// Algorithm https://github.com/i3/i3/blob/80dddd9961263be8ac3b46a15a9cc9302525071d/src/con.c#L756
-    double total = 0;
-    int calced;
+		double total = 0;
+		int calced;
 
 		foreach (Container c; containers)
 			if (c.SplitRatio > 0) {
 				total += c.SplitRatio;
 				calced++;
 			}
-    if (calced != containers.length)
+		if (calced != containers.length)
 			foreach (Container c; containers)
 				if (c.SplitRatio <= 0.0) {
 					if (calced == 0)
@@ -119,11 +119,11 @@ private:
 						total += (c.SplitRatio = total / calced);
 				}
 
-    if (total == 0.0) //TODO: When can this be 0?
+		if (total == 0.0) //TODO: When can this be 0?
 			foreach (Container c; containers)
-        c.SplitRatio = 1.0 / containers.length;
+				c.SplitRatio = 1.0 / containers.length;
 		else if (total != 1.0)
-			foreach (Container c; containers)
-        c.SplitRatio /= total;
+					foreach (Container c; containers)
+						c.SplitRatio /= total;
 	}
 }

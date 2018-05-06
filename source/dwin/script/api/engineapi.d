@@ -18,17 +18,17 @@ struct EngineAPI {
 	var GetRoot(var, var[]) {
 		Root rootCon = engine.RootContainer;
 		var root = _genericVar(rootCon);
-		
+
 		root.Screens = var.emptyArray;
 		foreach (scr; rootCon.Screens)
 			root.Screens ~= createVar(scr);
-		
+
 		root.StickyWindows = var.emptyArray;
 		foreach (window; rootCon.StickyWindows)
 			root.StickyWindows ~= createVar(window);
 		return root;
 	}
-	
+
 	var Quit(var, var[] args) {
 		engine.Quit = true;
 		return var.emptyObject;
@@ -46,15 +46,15 @@ private:
 	var _genericVar(Container container) {
 		var con = var.emptyObject;
 		con.Name = container.Name;
- 		con.Geom = var.emptyObject;
-		con.Geom.X = container.Geom.x;		
+		con.Geom = var.emptyObject;
+		con.Geom.X = container.Geom.x;
 		con.Geom.Y = container.Geom.y;
-		con.Geom.Width = container.Geom.width;		
+		con.Geom.Width = container.Geom.width;
 		con.Geom.Height = container.Geom.height;
 		con.SplitRatio = container.SplitRatio;
 		return con;
 	}
-	
+
 	var createVar(Screen screen) {
 		var scr = _genericVar(screen);
 		scr.ActiveWorkspace = screen.ActiveWorkspace;
@@ -62,7 +62,7 @@ private:
 		scr.Bottom = createVar(screen.Bottom);
 		scr.Left = createVar(screen.Left);
 		scr.Right = createVar(screen.Right);
-		
+
 		scr.Workspaces = var.emptyArray;
 		foreach (workspace; screen.Workspaces)
 			scr.Workspaces ~= createVar(workspace);
@@ -74,7 +74,7 @@ private:
 		work.Focused = createVar(workspace.Focused);
 		work.Fullscreen = workspace.Fullscreen;
 		work.Root = createVar(workspace.Root);
-		
+
 		work.Floating = var.emptyArray;
 		foreach (window; workspace.Floating)
 			work.Floating ~= createVar(window);
@@ -91,7 +91,7 @@ private:
 
 	var createVar(SplitContainer splitContainer) {
 		var split = _genericVar(splitContainer);
-		
+
 		split.Containers = var.emptyArray;
 		foreach (con; splitContainer.Containers)
 			split.Containers ~= createVar(con);

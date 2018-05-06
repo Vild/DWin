@@ -69,7 +69,7 @@ public:
 			else {
 				//XXX: Hack to show why the function could not be called!
 				pragma(msg, callerFile, "(", callerLine,
-					",1): Error: Script Function: " ~ func ~ ", Unsupported argument type: " ~ typeof(arg).stringof);
+						",1): Error: Script Function: " ~ func ~ ", Unsupported argument type: " ~ typeof(arg).stringof);
 				static assert(0, "Unsupported argument type: " ~ typeof(arg).stringof);
 			}
 		}

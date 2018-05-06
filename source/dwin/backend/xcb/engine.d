@@ -57,9 +57,9 @@ public:
 
 		if (ret < 0) {
 			perror("");
-			assert(ret < 0, "Poll failed!");	
+			assert(ret < 0, "Poll failed!");
 		}
-		
+
 		if (ret) {
 			if (pollFD[0].revents & POLLIN) {
 				xcb_generic_event_t* e;
@@ -70,7 +70,7 @@ public:
 
 			}
 		}
-		
+
 		xcb_flush(con);
 	}
 
@@ -86,10 +86,10 @@ public:
 		return symbols;
 	}
 
-	@property xcb_ewmh_connection_t * EWMHConnection() {
+	@property xcb_ewmh_connection_t* EWMHConnection() {
 		return &ewmhCon;
 	}
-	
+
 	@property uint RootEventMask() {
 		return rootEventMask;
 	}
@@ -128,7 +128,7 @@ private:
 
 	void takeWMControl() {
 		xcb_generic_error_t* error = xcb_request_check(con, xcb_change_window_attributes_checked(con, screen.root,
-			XCB_CW_EVENT_MASK, &rootEventMask));
+				XCB_CW_EVENT_MASK, &rootEventMask));
 		if (error) {
 			scope (exit)
 				xcb_free(error);

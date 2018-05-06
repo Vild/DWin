@@ -57,11 +57,12 @@ public:
 private:
 	Modifier[string] modifiers;
 	uint numlockMask;
-	uint mouseMasks = XCB_KEY_BUT_MASK_BUTTON_1 + XCB_KEY_BUT_MASK_BUTTON_2 + XCB_KEY_BUT_MASK_BUTTON_3 + XCB_KEY_BUT_MASK_BUTTON_4 + XCB_KEY_BUT_MASK_BUTTON_5;
+	uint mouseMasks = XCB_KEY_BUT_MASK_BUTTON_1 + XCB_KEY_BUT_MASK_BUTTON_2 + XCB_KEY_BUT_MASK_BUTTON_3
+		+ XCB_KEY_BUT_MASK_BUTTON_4 + XCB_KEY_BUT_MASK_BUTTON_5;
 	void refreshNumlockMask(XCBEngine engine) {
 		numlockMask = 0; //; // Removes mouse buttons flags
 		xcb_get_modifier_mapping_reply_t* reply = xcb_get_modifier_mapping_reply(engine.Connection,
-			xcb_get_modifier_mapping(engine.Connection), null);
+				xcb_get_modifier_mapping(engine.Connection), null);
 		if (!reply)
 			return;
 		scope (exit)
@@ -107,7 +108,7 @@ private:
 		//dfmt on
 
 		xcb_get_modifier_mapping_reply_t* modmapReply = xcb_get_modifier_mapping_reply(engine.Connection,
-			xcb_get_modifier_mapping(engine.Connection), null);
+				xcb_get_modifier_mapping(engine.Connection), null);
 		if (!modmapReply)
 			return;
 

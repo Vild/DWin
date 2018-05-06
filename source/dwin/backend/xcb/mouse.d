@@ -20,7 +20,7 @@ public:
 
 	override void Update() {
 		xcb_query_pointer_reply_t* reply = xcb_query_pointer_reply(engine.Connection,
-			xcb_query_pointer(engine.Connection, (cast(XCBRoot)engine.RootContainer).InternalWindow), null);
+				xcb_query_pointer(engine.Connection, (cast(XCBRoot)engine.RootContainer).InternalWindow), null);
 
 		x = reply.root_x;
 		y = reply.root_y;

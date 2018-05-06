@@ -1,0 +1,5 @@
+Info.AddCtor("terminal.ds", function() {
+	Keyboard.Bind("Ctrl + Enter", function(var pressed) {
+		System.SpawnProcess("lxterminal");
+	});
+});

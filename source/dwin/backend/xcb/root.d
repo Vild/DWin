@@ -13,8 +13,7 @@ public:
 		this.engine = engine;
 		this.window = window;
 
-		xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(engine.Connection, xcb_get_geometry(engine.Connection, window),
-			null);
+		xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(engine.Connection, xcb_get_geometry(engine.Connection, window), null);
 		Geometry g;
 		if (geom) {
 			g.x = geom.x;

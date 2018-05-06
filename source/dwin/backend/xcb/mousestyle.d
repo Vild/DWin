@@ -35,8 +35,7 @@ public:
 	}
 
 	override void Apply() {
-		xcb_change_window_attributes(engine.Connection, (cast(XCBRoot)engine.RootContainer).InternalWindow, XCB_CW_CURSOR,
-			&cursor);
+		xcb_change_window_attributes(engine.Connection, (cast(XCBRoot)engine.RootContainer).InternalWindow, XCB_CW_CURSOR, &cursor);
 	}
 
 	@property xcb_cursor_t Cursor() {

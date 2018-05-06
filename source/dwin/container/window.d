@@ -40,14 +40,14 @@ public:
 	@property string Title() {
 		return title;
 	}
-	
+
 	@property abstract bool isDock();
 	@property abstract bool IsSticky();
 
 	@property uint Desktop() {
 		return desktop;
 	}
-	
+
 	@property bool Visible() {
 		return visible.data;
 	}
@@ -59,7 +59,7 @@ public:
 protected:
 	//string class_;
 	//string instance;
-	Strut strut;	
+	Strut strut;
 	uint desktop;
 	string title;
 	Changed!bool visible;

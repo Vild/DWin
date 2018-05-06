@@ -52,7 +52,7 @@ public:
 	@property bool Dirty() {
 		return geom.changed || needFocus.changed;
 	}
-	
+
 protected:
 	string name;
 	Changed!Geometry geom;

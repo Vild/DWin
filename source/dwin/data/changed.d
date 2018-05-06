@@ -47,8 +47,8 @@ public:
 			return -b.opCmp(a);
 		else
 			return a < b ? -1 : a > b ? +1 : 0;
-	}  
-	
+	}
+
 	bool opEquals(X)(X b) if (is(T : X) || is(typeof(a.opEquals(b))) || is(typeof(b.opEquals(a)))) {
 		alias data a;
 		static if (is(typeof(a.opEquals(b))))
@@ -57,8 +57,8 @@ public:
 			return b.opEquals(a);
 		else
 			return a == b;
-	}       
-	
+	}
+
 	T clear() {
 		oldData = data;
 		return data;
@@ -70,6 +70,7 @@ public:
 
 	string toString() const {
 		import std.conv : to;
+
 		return to!string(data);
 	}
 
